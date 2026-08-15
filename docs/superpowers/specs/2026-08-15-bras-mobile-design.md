@@ -85,22 +85,33 @@ Porta de acesso por código de grupo, com sessão anónima do Supabase:
 4. Todas as políticas RLS passam a exigir pertença ao grupo, através de um
    `EXISTS` sobre `device_grants`.
 5. Operações destrutivas (apagar sessão, alterar produtos, alterar preços) exigem
-   adicionalmente `role = 'admin'` no perfil associado.
+   adicionalmente que o dispositivo tenha sido autorizado como administrador.
+
+   O papel de administrador **não pode** ser lido do perfil escolhido. O perfil é
+   escolhido no cliente e não está ligado a nenhuma identidade autenticada, pelo
+   que qualquer dispositivo poderia afirmar ser o perfil de um administrador.
+   Uma política RLS que confiasse em `profiles.role` seria contornável.
+
+   Em vez disso, cada grupo tem **dois** códigos distintos: um de membro e um de
+   administrador. `device_grants` guarda o papel obtido, e é esse valor — atribuído
+   pelo servidor no momento da troca do código — que as políticas consultam.
 6. O código do grupo é guardado no dispositivo em `expo-secure-store` (Keychain no
    iOS, Keystore no Android), nunca em armazenamento simples.
 
-Ciclo de vida do código:
+Ciclo de vida dos códigos:
 
-- O código é definido por um administrador no ecrã de definições do Admin.
-- Na base de dados é guardado apenas o seu hash (`pgcrypto`, `crypt` com salt),
-  na coluna `groups.access_code_hash`. O código em claro nunca é persistido no
-  servidor nem legível por qualquer política de leitura.
-- `redeem_group_code` compara o código recebido com o hash e, em caso de
-  correspondência, insere o vínculo. A função é a única via de escrita em
+- Os dois códigos são definidos por um administrador no ecrã de definições.
+- Na base de dados guarda-se apenas o hash de cada um (`pgcrypto`, `crypt` com
+  salt), em `groups.member_code_hash` e `groups.admin_code_hash`. Os códigos em
+  claro nunca são persistidos no servidor nem legíveis por qualquer política.
+- `redeem_group_code` compara o código recebido com ambos os hashes e insere o
+  vínculo com o papel correspondente. É a única via de escrita em
   `device_grants`; não existe política que permita inserção direta.
-- Alterar o código no Admin apaga todas as linhas de `device_grants` do grupo,
-  obrigando cada dispositivo a reintroduzi-lo. É este o mecanismo de revogação,
-  usado quando alguém sai do grupo ou o código é divulgado.
+- Alterar um código apaga as linhas de `device_grants` desse grupo com o papel
+  afetado, obrigando os dispositivos a reintroduzi-lo. É este o mecanismo de
+  revogação, usado quando alguém sai do grupo ou um código é divulgado.
+- Os códigos são gerados com pelo menos 12 caracteres aleatórios. Combinado com o
+  limite de pedidos do Supabase, torna a adivinhação por força bruta impraticável.
 
 Tabela de suporte:
 
@@ -109,10 +120,15 @@ CREATE TABLE public.device_grants (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   auth_user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   group_id UUID NOT NULL REFERENCES public.groups(id) ON DELETE CASCADE,
+  role VARCHAR(20) NOT NULL DEFAULT 'member'
+    CHECK (role IN ('member', 'admin')),
   granted_at TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE(auth_user_id, group_id)
 );
 ```
+
+O campo `profiles.role` mantém-se, mas passa a ser apenas indicação visual na
+interface. Nenhuma decisão de autorização depende dele.
 
 ### 3.3 Limitação assumida
 
