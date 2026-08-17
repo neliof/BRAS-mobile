@@ -1,10 +1,21 @@
 import { supabase } from './supabase';
 import type { Round } from '../types';
 
+/**
+ * `items` não é coluna de `rounds`: os artigos são linhas em `round_items`, e os
+ * consumos linhas em `consumption`. Com um `select('*')` a lista de rondas vinha
+ * sem artigos nenhuns e o cartão da ronda mostrava o total sem nunca dizer o que
+ * se bebeu.
+ *
+ * A tabela chama-se `consumption` (singular); o alias mantém a forma que os
+ * tipos e o domínio esperam (`item.consumptions`).
+ */
+const ROUND_SELECT = '*, items:round_items(*, consumptions:consumption(*))';
+
 export async function fetchRounds(sessionId: string): Promise<Round[]> {
   const { data, error } = await supabase
     .from('rounds')
-    .select('*')
+    .select(ROUND_SELECT)
     .eq('session_id', sessionId)
     .order('created_at', { ascending: false });
 
@@ -15,9 +26,7 @@ export async function fetchRounds(sessionId: string): Promise<Round[]> {
 export async function fetchRoundDetails(roundId: string): Promise<Round> {
   const { data, error } = await supabase
     .from('rounds')
-    // A tabela chama-se `consumption`; o alias mantém a forma que os tipos e o
-    // domínio esperam (`item.consumptions`).
-    .select('*, items:round_items(*, consumptions:consumption(*))')
+    .select(ROUND_SELECT)
     .eq('id', roundId)
     .single();
 
@@ -142,7 +151,7 @@ export async function cancelRound(
       cancellation_reason: reason,
     })
     .eq('id', roundId)
-    .select()
+    .select(ROUND_SELECT)
     .single();
 
   if (error) throw new Error(error.message);
@@ -152,7 +161,7 @@ export async function cancelRound(
 export async function fetchActiveRounds(sessionId: string): Promise<Round[]> {
   const { data, error } = await supabase
     .from('rounds')
-    .select('*')
+    .select(ROUND_SELECT)
     .eq('session_id', sessionId)
     .eq('status', 'active')
     .order('created_at', { ascending: false });

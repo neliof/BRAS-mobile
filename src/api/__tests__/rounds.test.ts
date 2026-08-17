@@ -1,4 +1,4 @@
-import { createRound } from '../rounds';
+import { createRound, fetchRounds } from '../rounds';
 import { supabase } from '../supabase';
 
 jest.mock('../supabase', () => ({ supabase: { from: jest.fn() } }));
@@ -123,5 +123,32 @@ describe('createRound', () => {
 
     await expect(createRound('sess-1', DRAFT)).rejects.toThrow('membro inexistente');
     expect(deleteEq).toHaveBeenCalledWith('id', 'round-1');
+  });
+});
+
+describe('fetchRounds', () => {
+  it('traz os artigos e os consumos, que não são colunas de rounds', async () => {
+    const round = {
+      id: 'round-1',
+      session_id: 'sess-1',
+      items: [{ id: 'ri-1', product_name: 'Super Bock', consumptions: [] }],
+    };
+    const chain = {
+      select: jest.fn(function (this: any) {
+        return this;
+      }),
+      eq: jest.fn(function (this: any) {
+        return this;
+      }),
+      order: jest.fn(() => Promise.resolve({ data: [round], error: null })),
+    };
+    from.mockReturnValue(chain);
+
+    const result = await fetchRounds('sess-1');
+
+    // Sem o embed, o cartão da ronda mostrava o total e nenhum produto.
+    expect(chain.select).toHaveBeenCalledWith(expect.stringContaining('round_items'));
+    expect(chain.select).toHaveBeenCalledWith(expect.stringContaining('consumption'));
+    expect(result[0].items).toHaveLength(1);
   });
 });
