@@ -12,42 +12,45 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSession } from '../../src/state/SessionContext';
 import { useCreateRound, useRounds } from '../../src/hooks/useRounds';
 import { useSessionDetails } from '../../src/hooks/useSession';
-import { buildRound, type RoundDraftItem } from '../../src/domain/rounds';
+import { buildRound, type RoundDraftItem, RoundValidationError } from '../../src/domain/rounds';
 import type { Product } from '../../src/types';
 
-// Mock de produtos (será substituído por query real)
-const MOCK_PRODUCTS: Product[] = [
-  {
-    id: '1',
-    name: 'Super Bock',
-    category: 'cerveja',
-    unit_size: 'Caneca 0.5L',
-    image_url: '',
-    current_price: 2.50,
-    active: true,
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: '2',
-    name: 'Sagres',
-    category: 'cerveja',
-    unit_size: 'Caneca 0.5L',
-    image_url: '',
-    current_price: 2.50,
-    active: true,
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: '3',
-    name: 'Shot de Vodka',
-    category: 'shots',
-    unit_size: 'Shot',
-    image_url: '',
-    current_price: 1.50,
-    active: true,
-    created_at: new Date().toISOString(),
-  },
-];
+// TODO: Substituir MOCK_PRODUCTS por query real com hooks (Tasks 1-2)
+// const MOCK_PRODUCTS: Product[] = [
+//   {
+//     id: '1',
+//     name: 'Super Bock',
+//     category: 'cerveja',
+//     unit_size: 'Caneca 0.5L',
+//     image_url: '',
+//     current_price: 2.50,
+//     active: true,
+//     created_at: new Date().toISOString(),
+//   },
+//   {
+//     id: '2',
+//     name: 'Sagres',
+//     category: 'cerveja',
+//     unit_size: 'Caneca 0.5L',
+//     image_url: '',
+//     current_price: 2.50,
+//     active: true,
+//     created_at: new Date().toISOString(),
+//   },
+//   {
+//     id: '3',
+//     name: 'Shot de Vodka',
+//     category: 'shots',
+//     unit_size: 'Shot',
+//     image_url: '',
+//     current_price: 1.50,
+//     active: true,
+//     created_at: new Date().toISOString(),
+//   },
+// ];
+
+// Placeholder vazio até integração dos hooks reais
+const MOCK_PRODUCTS: Product[] = [];
 
 interface RoundItemDraft {
   productId: string;
@@ -57,14 +60,25 @@ interface RoundItemDraft {
 
 export default function NovaRondaModal() {
   const router = useRouter();
-  const { sessionId } = useLocalSearchParams();
+  const params = useLocalSearchParams<{ sessionId?: string }>();
+  const sessionId = params?.sessionId;
   const { profile } = useSession();
   const createRoundMutation = useCreateRound();
-  const { data: session } = useSessionDetails(sessionId as string);
-  const { data: rounds = [] } = useRounds(sessionId as string);
+  const { data: session } = useSessionDetails(sessionId || '');
+  const { data: rounds = [] } = useRounds(sessionId || '');
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   const [selectedItems, setSelectedItems] = useState<RoundItemDraft[]>([]);
   const [notes, setNotes] = useState('');
+
+  // Valida se sessionId existe
+  if (!sessionId) {
+    return (
+      <View className="flex-1 bg-ink justify-center items-center">
+        <Text className="text-red-400 font-semibold">Erro: Sessão inválida</Text>
+      </View>
+    );
+  }
 
   const handleAddProduct = (product: Product) => {
     const existing = selectedItems.find((item) => item.productId === product.id);
@@ -112,6 +126,8 @@ export default function NovaRondaModal() {
       return;
     }
 
+    setValidationError(null);
+
     try {
       // Constrói e valida a ronda
       const newRound = buildRound({
@@ -145,7 +161,13 @@ export default function NovaRondaModal() {
 
       router.back();
     } catch (error) {
-      console.error('Erro ao criar ronda:', error);
+      // Diferencia RoundValidationError de outros erros
+      if (error instanceof RoundValidationError) {
+        setValidationError(`Erro na ronda: ${error.message}`);
+      } else {
+        console.error('Erro ao criar ronda:', error);
+        setValidationError('Erro ao criar ronda. Tenta novamente.');
+      }
     }
   };
 
@@ -301,10 +323,10 @@ export default function NovaRondaModal() {
           )}
         </Pressable>
 
-        {createRoundMutation.isError && (
+        {(validationError || createRoundMutation.isError) && (
           <View className="bg-red-500/20 border border-red-500/40 rounded-2xl px-4 py-3 mt-4">
             <Text className="text-red-300 text-sm">
-              Erro ao criar ronda. Tenta novamente.
+              {validationError || 'Erro ao criar ronda. Tenta novamente.'}
             </Text>
           </View>
         )}

@@ -13,39 +13,43 @@ import { useSession } from '../../src/state/SessionContext';
 import { useCreateSession } from '../../src/hooks/useSession';
 import type { Venue, Profile } from '../../src/types';
 
-// Mock de venues e membros (será substituído por queries reais)
-const MOCK_VENUES: Venue[] = [
-  { id: '1', name: 'Cervejaria Central', logo_url: '', created_at: new Date().toISOString() },
-  { id: '2', name: 'Pastel Bar', logo_url: '', created_at: new Date().toISOString() },
-  { id: '3', name: 'Taberna do Brás', logo_url: '', created_at: new Date().toISOString() },
-];
+// TODO: Substituir MOCK_VENUES e MOCK_MEMBERS por queries reais com hooks (Tasks 1-2)
+// const MOCK_VENUES: Venue[] = [
+//   { id: '1', name: 'Cervejaria Central', logo_url: '', created_at: new Date().toISOString() },
+//   { id: '2', name: 'Pastel Bar', logo_url: '', created_at: new Date().toISOString() },
+//   { id: '3', name: 'Taberna do Brás', logo_url: '', created_at: new Date().toISOString() },
+// ];
 
-const MOCK_MEMBERS: Profile[] = [
-  {
-    id: '1',
-    name: 'João Silva',
-    avatar_url: '',
-    role: 'member',
-    active: true,
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: '2',
-    name: 'Maria Santos',
-    avatar_url: '',
-    role: 'member',
-    active: true,
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: '3',
-    name: 'Pedro Costa',
-    avatar_url: '',
-    role: 'member',
-    active: true,
-    created_at: new Date().toISOString(),
-  },
-];
+// const MOCK_MEMBERS: Profile[] = [
+//   {
+//     id: '1',
+//     name: 'João Silva',
+//     avatar_url: '',
+//     role: 'member',
+//     active: true,
+//     created_at: new Date().toISOString(),
+//   },
+//   {
+//     id: '2',
+//     name: 'Maria Santos',
+//     avatar_url: '',
+//     role: 'member',
+//     active: true,
+//     created_at: new Date().toISOString(),
+//   },
+//   {
+//     id: '3',
+//     name: 'Pedro Costa',
+//     avatar_url: '',
+//     role: 'member',
+//     active: true,
+//     created_at: new Date().toISOString(),
+//   },
+// ];
+
+// Placeholders vazias até integração dos hooks reais
+const MOCK_VENUES: Venue[] = [];
+const MOCK_MEMBERS: Profile[] = [];
 
 export default function IniciarNoiteModal() {
   const router = useRouter();
