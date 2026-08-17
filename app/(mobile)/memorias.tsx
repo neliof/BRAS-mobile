@@ -5,7 +5,7 @@ import { PhotoGallery } from '../../src/components/mobile/PhotoGallery';
 
 export default function MemoriasScreen() {
   const { grant } = useSession();
-  const groupId = grant?.group_id ?? '';
+  const groupId = grant?.groupId ?? '';
 
   const { data: photos = [], isLoading } = usePhotosByGroup(groupId);
 

@@ -7,7 +7,7 @@ import { SessionCard } from '../../src/components/mobile/SessionCard';
 export default function HomeScreen() {
   const router = useRouter();
   const { profile, grant } = useSession();
-  const groupId = grant?.group_id ?? '';
+  const groupId = grant?.groupId ?? '';
 
   const { data: activeSessions = [] } = useSessionQuery(groupId);
   const { data: allSessions = [] } = useAllSessions(groupId);

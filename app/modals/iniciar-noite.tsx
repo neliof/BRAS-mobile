@@ -84,7 +84,7 @@ export default function IniciarNoiteModal() {
 
     try {
       await createSessionMutation.mutateAsync({
-        groupId: grant.group_id,
+        groupId: grant.groupId,
         venueId: selectedVenueId,
         name: sessionName,
         memberIds: Array.from(selectedMembers),

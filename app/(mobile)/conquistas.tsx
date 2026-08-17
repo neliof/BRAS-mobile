@@ -7,7 +7,7 @@ import type { Achievement, MemberAchievement } from '../../src/types';
 
 export default function ConquistasScreen() {
   const { profile, grant } = useSession();
-  const groupId = grant?.group_id ?? '';
+  const groupId = grant?.groupId ?? '';
 
   const { data: allSessions = [] } = useAllSessions(groupId);
 

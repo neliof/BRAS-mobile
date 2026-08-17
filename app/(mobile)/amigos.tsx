@@ -6,7 +6,7 @@ import { computeMemberDebt } from '../../src/domain/debt';
 
 export default function AmigosScreen() {
   const { grant, profile } = useSession();
-  const groupId = grant?.group_id ?? '';
+  const groupId = grant?.groupId ?? '';
 
   const { data: allSessions = [] } = useAllSessions(groupId);
   const [searchText, setSearchText] = useState('');

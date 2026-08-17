@@ -8,7 +8,7 @@ import type { Session } from '../../src/types';
 export default function HistoricoScreen() {
   const router = useRouter();
   const { grant } = useSession();
-  const groupId = grant?.group_id ?? '';
+  const groupId = grant?.groupId ?? '';
 
   const { data: allSessions = [] } = useAllSessions(groupId);
 
