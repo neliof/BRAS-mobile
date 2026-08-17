@@ -4,8 +4,11 @@ import { useSessionDetails } from '../../src/hooks/useSession';
 import { useRounds } from '../../src/hooks/useRounds';
 import { usePayments } from '../../src/hooks/usePayments';
 import { useGroupProfiles } from '../../src/hooks/useProfiles';
+import { usePhotosBySession, useRealtimePhotos } from '../../src/hooks/usePhotos';
+import { usePhotoUrls } from '../../src/hooks/usePhotoUrls';
 import { RoundItem } from '../../src/components/mobile/RoundItem';
 import { MemberDebt } from '../../src/components/mobile/MemberDebt';
+import { PhotoGallery } from '../../src/components/mobile/PhotoGallery';
 import { computeSessionTotals } from '../../src/domain/debt';
 
 export default function NiteScreen() {
@@ -17,6 +20,12 @@ export default function NiteScreen() {
   const { data: rounds = [] } = useRounds(safeSessionId);
   const { data: payments = [] } = usePayments(safeSessionId);
   const { data: profiles = [] } = useGroupProfiles(session?.group_id ?? '');
+  const { data: photos = [] } = usePhotosBySession(safeSessionId);
+  const { data: photoUrls } = usePhotoUrls(photos);
+
+  // Todos os hooks antes do primeiro return: a noite chega vazia no primeiro
+  // render e a ordem dos hooks não pode mudar quando chegar.
+  useRealtimePhotos(safeSessionId);
 
   if (!session) {
     return (
@@ -52,6 +61,20 @@ export default function NiteScreen() {
     router.push({
       pathname: '/modals/qr-code',
       params: { sessionId: safeSessionId },
+    });
+  };
+
+  const handleAddPhoto = () => {
+    router.push({
+      pathname: '/modals/carregar-foto',
+      params: { sessionId: safeSessionId },
+    });
+  };
+
+  const handleOpenPhoto = (photoId: string) => {
+    router.push({
+      pathname: '/modals/foto',
+      params: { photoId },
     });
   };
 
@@ -125,6 +148,31 @@ export default function NiteScreen() {
           )}
           scrollEnabled={false}
         />
+      </View>
+
+      <View className="px-4 mb-6">
+        <View className="flex-row items-center justify-between mb-3">
+          <Text className="text-white/60 text-sm font-semibold">Fotos da noite</Text>
+          {session.status === 'active' && (
+            <Pressable
+              onPress={handleAddPhoto}
+              className="bg-white/10 rounded-2xl px-4 py-2 border border-white/20"
+            >
+              <Text className="text-white font-semibold text-xs">Adicionar</Text>
+            </Pressable>
+          )}
+        </View>
+
+        {photos.length === 0 ? (
+          <Text className="text-white/40 text-sm">Ainda não há fotos desta noite.</Text>
+        ) : (
+          <PhotoGallery
+            photos={photos}
+            urls={photoUrls}
+            numColumns={3}
+            onPhotoPress={(photo) => handleOpenPhoto(photo.id)}
+          />
+        )}
       </View>
 
       {/* Uma noite fechada é histórico: nem se lhe juntam rondas nem se fecha
