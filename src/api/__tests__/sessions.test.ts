@@ -46,7 +46,7 @@ describe('sessions API', () => {
           group_id: 'grp-1',
           status: 'active',
           name: 'Noite de sexta',
-          code: 'BRAS-2026-0815',
+          code: 'BRAS-2026-08-15',
           venue_id: 'venue-1',
           date: '2026-08-15',
           started_at: '2026-08-15T20:00:00Z',
@@ -90,7 +90,7 @@ describe('sessions API', () => {
         group_id: 'grp-1',
         status: 'active',
         name: 'Noite de sexta',
-        code: 'BRAS-2026-0815',
+        code: 'BRAS-2026-08-15',
         venue_id: 'venue-1',
         date: '2026-08-15',
         started_at: '2026-08-15T20:00:00Z',
@@ -138,7 +138,7 @@ describe('sessions API', () => {
         group_id: 'grp-1',
         venue_id: 'venue-1',
         name: 'Noite nova',
-        code: 'BRAS-2026-0817',
+        code: 'BRAS-2026-08-17',
         status: 'active',
         started_at: expect.any(String),
         created_by: 'user-1',
@@ -161,7 +161,7 @@ describe('sessions API', () => {
       expect(from).toHaveBeenCalledWith('sessions');
       expect(chain.insert).toHaveBeenCalled();
       expect(result.status).toBe('active');
-      expect(result.code).toMatch(/^BRAS-\d{4}-\d{4}$/);
+      expect(result.code).toMatch(/^BRAS-\d{4}-\d{2}-\d{2}$/);
     });
 
     it('propaga erro de inserção', async () => {
