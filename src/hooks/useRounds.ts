@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   fetchRounds,
@@ -6,6 +7,7 @@ import {
   createRound,
   cancelRound,
 } from '../api/rounds';
+import { supabase } from '../api/supabase';
 import type { Round } from '../types';
 
 /**
@@ -112,4 +114,42 @@ export function useCancelRound() {
       });
     },
   });
+}
+
+/**
+ * Hook para subscrições realtime em rondas de uma sessão.
+ * Invalida cache quando há mudanças na BD.
+ */
+export function useRealtimeRounds(sessionId: string) {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (!sessionId) return;
+
+    const channel = supabase
+      .channel(`rounds:${sessionId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // INSERT, UPDATE, DELETE
+          schema: 'public',
+          table: 'rounds',
+          filter: `session_id=eq.${sessionId}`,
+        },
+        () => {
+          // Invalida todas as queries de rondas desta sessão
+          queryClient.invalidateQueries({
+            queryKey: ['rounds', sessionId],
+          });
+          queryClient.invalidateQueries({
+            queryKey: ['rounds', 'active', sessionId],
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [sessionId, queryClient]);
 }

@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   fetchPayments,
@@ -7,6 +8,7 @@ import {
   markPaymentComplete,
   updatePayment,
 } from '../api/payments';
+import { supabase } from '../api/supabase';
 import type { Payment, PaymentMethod, PaymentStatus } from '../types';
 
 /**
@@ -135,11 +137,49 @@ export function useUpdatePayment() {
       };
     }) => updatePayment(paymentId, updates),
 
-    onSuccess: (updatedPayment) => {
+    onSuccess: () => {
       // Invalida todos os queries de pagamentos para refetch
       queryClient.invalidateQueries({
         queryKey: ['payments'],
       });
     },
   });
+}
+
+/**
+ * Hook para subscrições realtime em pagamentos de uma sessão.
+ * Invalida cache quando há mudanças na BD.
+ */
+export function useRealtimePayments(sessionId: string) {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (!sessionId) return;
+
+    const channel = supabase
+      .channel(`payments:${sessionId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // INSERT, UPDATE, DELETE
+          schema: 'public',
+          table: 'payments',
+          filter: `session_id=eq.${sessionId}`,
+        },
+        () => {
+          // Invalida todas as queries de pagamentos desta sessão
+          queryClient.invalidateQueries({
+            queryKey: ['payments', sessionId],
+          });
+          queryClient.invalidateQueries({
+            queryKey: ['payments', 'pending', sessionId],
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [sessionId, queryClient]);
 }

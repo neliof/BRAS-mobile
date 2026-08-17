@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   fetchPhotos,
@@ -10,6 +11,7 @@ import {
   addTagToPhoto,
   removeTagFromPhoto,
 } from '../api/photos';
+import { supabase } from '../api/supabase';
 import type { Photo } from '../types';
 
 /**
@@ -185,4 +187,39 @@ export function useDeletePhoto() {
       });
     },
   });
+}
+
+/**
+ * Hook para subscrições realtime em fotos de uma sessão.
+ * Invalida cache quando há mudanças na BD.
+ */
+export function useRealtimePhotos(sessionId: string) {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (!sessionId) return;
+
+    const channel = supabase
+      .channel(`photos:${sessionId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // INSERT, UPDATE, DELETE
+          schema: 'public',
+          table: 'photos',
+          filter: `session_id=eq.${sessionId}`,
+        },
+        () => {
+          // Invalida todas as queries de fotos desta sessão
+          queryClient.invalidateQueries({
+            queryKey: ['photos', 'session', sessionId],
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [sessionId, queryClient]);
 }
