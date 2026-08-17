@@ -1,5 +1,6 @@
 import { View, Text, Pressable, Alert } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
+import QRCode from 'react-native-qrcode-svg';
 import { useSessionDetails } from '../../src/hooks/useSession';
 import * as Clipboard from 'expo-clipboard';
 
@@ -44,20 +45,16 @@ export default function QRCodeModal() {
       {/* Header */}
       <View className="mb-8">
         <Text className="text-white text-2xl font-black text-center mb-2">
-          Código de acesso
+          Código da noite
         </Text>
         <Text className="text-white/60 text-center">
-          Partilha este código com os amigos para entrarem na noite
+          Identifica esta noite. Para entrar na app é preciso o código do grupo.
         </Text>
       </View>
 
-      {/* QR Code mockup (será integrado com react-native-qrcode-svg) */}
-      <View className="bg-white rounded-3xl p-4 mb-8 w-80 h-80 justify-center items-center">
-        <View className="w-64 h-64 bg-white/10 rounded-2xl justify-center items-center border-4 border-white/20">
-          <Text className="text-white/40 text-center text-xl">
-            QR Code{'\n'}(implementar com react-native-qrcode-svg)
-          </Text>
-        </View>
+      {/* Fundo branco obrigatório: leitores precisam de contraste alto. */}
+      <View className="bg-white rounded-3xl p-6 mb-8 justify-center items-center">
+        <QRCode value={session.code} size={256} backgroundColor="#FFFFFF" color="#12161F" />
       </View>
 
       {/* Code display */}
