@@ -6,6 +6,7 @@ import {
   fetchActiveRounds,
   createRound,
   cancelRound,
+  type CreateRoundItem,
 } from '../api/rounds';
 import { supabase } from '../api/supabase';
 import type { Round } from '../types';
@@ -67,14 +68,7 @@ export function useCreateRound() {
         requestedBy: string;
         createdBy: string;
         notes?: string;
-        items: Array<{
-          productId: string;
-          productName: string;
-          productImage?: string;
-          quantity: number;
-          unitPrice: number;
-          totalPrice: number;
-        }>;
+        items: CreateRoundItem[];
       };
     }) => createRound(sessionId, roundData),
 

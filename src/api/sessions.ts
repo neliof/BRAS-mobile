@@ -16,7 +16,11 @@ export async function fetchActiveSessions(groupId: string): Promise<Session[]> {
 export async function fetchSessionDetails(sessionId: string): Promise<Session> {
   const { data, error } = await supabase
     .from('sessions')
-    .select('*, rounds(*, round_items(*, consumptions(*))), payments(*), photos(*)')
+    // `round_items` e `consumption` vêm com alias porque os tipos e o domínio
+    // esperam `round.items` e `item.consumptions`.
+    .select(
+      '*, rounds(*, items:round_items(*, consumptions:consumption(*))), payments(*), photos(*)',
+    )
     .eq('id', sessionId)
     .single();
 

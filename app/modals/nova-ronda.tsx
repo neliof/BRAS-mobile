@@ -157,6 +157,12 @@ export default function NovaRondaModal() {
             quantity: item.quantity,
             unitPrice: item.unit_price,
             totalPrice: item.total_price,
+            // A divisão por consumidor é o que torna a dívida calculável.
+            consumptions: item.consumptions.map((consumption) => ({
+              memberId: consumption.member_id,
+              quantity: consumption.quantity,
+              amount: consumption.amount,
+            })),
           })),
         },
       });

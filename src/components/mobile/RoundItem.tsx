@@ -16,15 +16,17 @@ function RoundItemProduct({ item }: { item: RoundItemType }): React.ReactElement
           {item.quantity}x • {consumedByCount} membros
         </Text>
       </View>
+      {/* `total_price` já vem em euros: a conversão de cêntimos acontece
+          dentro de src/domain, não aqui. */}
       <Text className="text-brand font-bold text-sm">
-        {(item.total_price / 100).toFixed(2)}€
+        {item.total_price.toFixed(2)}€
       </Text>
     </View>
   );
 }
 
 export function RoundItem({ round }: RoundItemProps): React.ReactElement {
-  const totalAmount = round.total_amount / 100;
+  const totalAmount = round.total_amount;
 
   return (
     <View className="bg-white/10 rounded-2xl p-4 mb-3 border border-white/20">
