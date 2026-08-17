@@ -39,11 +39,21 @@ export default function HomeScreen() {
 
   return (
     <ScrollView className="flex-1 bg-ink">
-      <View className="px-4 pt-6 pb-4">
-        <Text className="text-white text-3xl font-black mb-1">
-          Olá, {profile?.name ?? 'amigo'}
-        </Text>
-        <Text className="text-white/60 text-sm">Bem-vindo ao BRÁS</Text>
+      <View className="px-4 pt-6 pb-4 flex-row items-start justify-between">
+        <View className="flex-1 pr-3">
+          <Text className="text-white text-3xl font-black mb-1">
+            Olá, {profile?.name ?? 'amigo'}
+          </Text>
+          <Text className="text-white/60 text-sm">Bem-vindo ao BRÁS</Text>
+        </View>
+        {/* O perfil passou a ser restaurado no arranque; sem isto não havia
+            forma de voltar ao ecrã de escolha. */}
+        <Pressable
+          onPress={() => router.push('/(gate)/perfil')}
+          className="bg-white/10 rounded-2xl px-4 py-3 border border-white/20"
+        >
+          <Text className="text-white font-semibold text-xs">Trocar perfil</Text>
+        </Pressable>
       </View>
 
       <View className="px-4 mb-6 gap-2">
