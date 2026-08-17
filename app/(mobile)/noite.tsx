@@ -10,11 +10,11 @@ import { computeSessionTotals } from '../../src/domain/debt';
 export default function NiteScreen() {
   const router = useRouter();
   const { sessionId } = useLocalSearchParams<{ sessionId: string }>();
-  const safeSesionId = sessionId ?? '';
+  const safeSessionId = sessionId ?? '';
 
-  const { data: session, isLoading: sessionLoading } = useSessionDetails(safeSesionId);
-  const { data: rounds = [] } = useRounds(safeSesionId);
-  const { data: payments = [] } = usePayments(safeSesionId);
+  const { data: session, isLoading: sessionLoading } = useSessionDetails(safeSessionId);
+  const { data: rounds = [] } = useRounds(safeSessionId);
+  const { data: payments = [] } = usePayments(safeSessionId);
   const { mutate: updateStatus } = useUpdateSessionStatus();
 
   if (!session) {
@@ -36,7 +36,7 @@ export default function NiteScreen() {
 
   const handleCloseSession = () => {
     updateStatus({
-      sessionId: safeSesionId,
+      sessionId: safeSessionId,
       status: 'closed',
     });
     router.back();
@@ -45,7 +45,7 @@ export default function NiteScreen() {
   const handleAddRound = () => {
     router.push({
       pathname: '/(mobile)/noite',
-      params: { sessionId: safeSesionId },
+      params: { sessionId: safeSessionId },
     });
   };
 

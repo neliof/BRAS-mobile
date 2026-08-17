@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { useSession } from '../../src/state/SessionContext';
 import { useAllSessions } from '../../src/hooks/useSession';
 import { computeSessionTotals } from '../../src/domain/debt';
+import type { Session } from '../../src/types';
 
 export default function HistoricoScreen() {
   const router = useRouter();
@@ -20,7 +21,7 @@ export default function HistoricoScreen() {
     });
   };
 
-  const renderSessionCard = (session) => {
+  const renderSessionCard = (session: Session) => {
     const totals = computeSessionTotals(session);
     const totalAmount = totals.totalCents / 100;
     const totalDrinks = totals.totalDrinks;

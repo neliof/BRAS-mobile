@@ -100,8 +100,6 @@ export default function ConquistasScreen() {
     return earned;
   }, [profile, allSessions]);
 
-  const earnedAchievementIds = new Set(memberAchievements.map((a) => a.achievement_id));
-
   const getProgress = (achievementId: string): number => {
     if (!profile) return 0;
 
