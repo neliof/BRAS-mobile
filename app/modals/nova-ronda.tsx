@@ -1,0 +1,314 @@
+import { useState } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  Pressable,
+  TextInput,
+  FlatList,
+  ActivityIndicator,
+} from 'react-native';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useSession } from '../../src/state/SessionContext';
+import { useCreateRound, useRounds } from '../../src/hooks/useRounds';
+import { useSessionDetails } from '../../src/hooks/useSession';
+import { buildRound, type RoundDraftItem } from '../../src/domain/rounds';
+import type { Product } from '../../src/types';
+
+// Mock de produtos (será substituído por query real)
+const MOCK_PRODUCTS: Product[] = [
+  {
+    id: '1',
+    name: 'Super Bock',
+    category: 'cerveja',
+    unit_size: 'Caneca 0.5L',
+    image_url: '',
+    current_price: 2.50,
+    active: true,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: '2',
+    name: 'Sagres',
+    category: 'cerveja',
+    unit_size: 'Caneca 0.5L',
+    image_url: '',
+    current_price: 2.50,
+    active: true,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: '3',
+    name: 'Shot de Vodka',
+    category: 'shots',
+    unit_size: 'Shot',
+    image_url: '',
+    current_price: 1.50,
+    active: true,
+    created_at: new Date().toISOString(),
+  },
+];
+
+interface RoundItemDraft {
+  productId: string;
+  quantity: number;
+  consumers: { memberId: string; quantity: number }[];
+}
+
+export default function NovaRondaModal() {
+  const router = useRouter();
+  const { sessionId } = useLocalSearchParams();
+  const { profile } = useSession();
+  const createRoundMutation = useCreateRound();
+  const { data: session } = useSessionDetails(sessionId as string);
+  const { data: rounds = [] } = useRounds(sessionId as string);
+
+  const [selectedItems, setSelectedItems] = useState<RoundItemDraft[]>([]);
+  const [notes, setNotes] = useState('');
+
+  const handleAddProduct = (product: Product) => {
+    const existing = selectedItems.find((item) => item.productId === product.id);
+    if (existing) {
+      existing.quantity += 1;
+    } else {
+      setSelectedItems([
+        ...selectedItems,
+        {
+          productId: product.id,
+          quantity: 1,
+          consumers: profile ? [{ memberId: profile.id, quantity: 1 }] : [],
+        },
+      ]);
+    }
+  };
+
+  const handleUpdateQuantity = (productId: string, quantity: number) => {
+    setSelectedItems(
+      selectedItems.map((item) =>
+        item.productId === productId ? { ...item, quantity: Math.max(0, quantity) } : item
+      )
+    );
+  };
+
+  const handleRemoveProduct = (productId: string) => {
+    setSelectedItems(selectedItems.filter((item) => item.productId !== productId));
+  };
+
+  const handleToggleConsumer = (productIndex: number, memberId: string) => {
+    const item = selectedItems[productIndex];
+    const existingConsumer = item.consumers.find((c) => c.memberId === memberId);
+
+    if (existingConsumer) {
+      item.consumers = item.consumers.filter((c) => c.memberId !== memberId);
+    } else {
+      item.consumers.push({ memberId, quantity: 1 });
+    }
+
+    setSelectedItems([...selectedItems]);
+  };
+
+  const handleSubmit = async () => {
+    if (!session || !profile || selectedItems.length === 0) {
+      return;
+    }
+
+    try {
+      // Constrói e valida a ronda
+      const newRound = buildRound({
+        sessionId: session.id,
+        roundNumber: rounds.length + 1,
+        requestedBy: profile.id,
+        createdBy: profile.id,
+        createdAt: new Date().toISOString(),
+        items: selectedItems as RoundDraftItem[],
+        products: MOCK_PRODUCTS,
+        notes: notes || undefined,
+      });
+
+      await createRoundMutation.mutateAsync({
+        sessionId: session.id,
+        roundData: {
+          roundNumber: newRound.round_number,
+          requestedBy: newRound.requested_by,
+          createdBy: newRound.created_by,
+          notes: newRound.notes,
+          items: newRound.items.map((item) => ({
+            productId: item.product_id,
+            productName: item.product_name,
+            productImage: item.product_image,
+            quantity: item.quantity,
+            unitPrice: item.unit_price,
+            totalPrice: item.total_price,
+          })),
+        },
+      });
+
+      router.back();
+    } catch (error) {
+      console.error('Erro ao criar ronda:', error);
+    }
+  };
+
+  const isValid = selectedItems.length > 0 && selectedItems.every((item) => item.consumers.length > 0);
+
+  return (
+    <ScrollView className="flex-1 bg-ink">
+      <View className="px-4 py-6">
+        {/* Header */}
+        <Text className="text-white text-2xl font-black mb-6">Nova ronda</Text>
+
+        {/* Produtos disponíveis */}
+        <View className="mb-6">
+          <Text className="text-white/80 text-sm font-semibold mb-3">Produtos</Text>
+          <FlatList
+            data={MOCK_PRODUCTS}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => {
+              const selected = selectedItems.find((i) => i.productId === item.id);
+              return (
+                <Pressable
+                  onPress={() => handleAddProduct(item)}
+                  className={`flex-row justify-between items-center rounded-2xl px-4 py-3 mb-2 border ${
+                    selected ? 'bg-brand/20 border-brand' : 'bg-white/10 border-white/20'
+                  }`}
+                >
+                  <View className="flex-1">
+                    <Text className={`font-semibold ${selected ? 'text-brand' : 'text-white'}`}>
+                      {item.name}
+                    </Text>
+                    <Text className="text-white/60 text-xs mt-1">{item.unit_size}</Text>
+                  </View>
+                  <Text className="text-white/80 font-semibold">{item.current_price.toFixed(2)}€</Text>
+                </Pressable>
+              );
+            }}
+            scrollEnabled={false}
+          />
+        </View>
+
+        {/* Itens selecionados */}
+        {selectedItems.length > 0 && (
+          <View className="mb-6">
+            <Text className="text-white/80 text-sm font-semibold mb-3">Seleção ({selectedItems.length})</Text>
+            {selectedItems.map((item, index) => {
+              const product = MOCK_PRODUCTS.find((p) => p.id === item.productId);
+              if (!product) return null;
+
+              return (
+                <View
+                  key={item.productId}
+                  className="bg-white/5 border border-white/10 rounded-2xl p-4 mb-4"
+                >
+                  <View className="flex-row justify-between items-center mb-3">
+                    <Text className="text-white font-semibold">{product.name}</Text>
+                    <Pressable
+                      onPress={() => handleRemoveProduct(item.productId)}
+                      className="px-3 py-1 bg-red-500/20 rounded-lg"
+                    >
+                      <Text className="text-red-400 text-xs font-semibold">Remover</Text>
+                    </Pressable>
+                  </View>
+
+                  <View className="mb-3">
+                    <Text className="text-white/60 text-xs mb-2">Quantidade</Text>
+                    <View className="flex-row items-center gap-2">
+                      <Pressable
+                        onPress={() => handleUpdateQuantity(item.productId, item.quantity - 1)}
+                        className="bg-white/10 rounded-lg px-3 py-2"
+                      >
+                        <Text className="text-white">−</Text>
+                      </Pressable>
+                      <TextInput
+                        className="flex-1 bg-white/10 rounded-lg px-3 py-2 text-white text-center"
+                        keyboardType="number-pad"
+                        value={item.quantity.toString()}
+                        onChangeText={(text) => handleUpdateQuantity(item.productId, parseInt(text) || 0)}
+                      />
+                      <Pressable
+                        onPress={() => handleUpdateQuantity(item.productId, item.quantity + 1)}
+                        className="bg-white/10 rounded-lg px-3 py-2"
+                      >
+                        <Text className="text-white">+</Text>
+                      </Pressable>
+                    </View>
+                  </View>
+
+                  <View>
+                    <Text className="text-white/60 text-xs mb-2">Consumidores</Text>
+                    <FlatList
+                      data={session?.member_ids || []}
+                      keyExtractor={(id) => id}
+                      renderItem={({ item: memberId }) => (
+                        <Pressable
+                          onPress={() => handleToggleConsumer(index, memberId)}
+                          className={`flex-row items-center rounded-lg px-3 py-2 mb-1 ${
+                            item.consumers.some((c) => c.memberId === memberId)
+                              ? 'bg-brand/20'
+                              : 'bg-white/5'
+                          }`}
+                        >
+                          <View
+                            className={`w-4 h-4 rounded-full border mr-2 ${
+                              item.consumers.some((c) => c.memberId === memberId)
+                                ? 'bg-brand border-brand'
+                                : 'border-white/20'
+                            }`}
+                          />
+                          <Text className="text-white/80 text-sm">{memberId}</Text>
+                        </Pressable>
+                      )}
+                      scrollEnabled={false}
+                    />
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+        )}
+
+        {/* Notas */}
+        <View className="mb-6">
+          <Text className="text-white/80 text-sm font-semibold mb-2">Notas (opcional)</Text>
+          <TextInput
+            className="bg-white/10 border border-white/20 rounded-2xl px-4 py-3 text-white"
+            placeholderTextColor="rgba(255, 255, 255, 0.4)"
+            placeholder="ex: Ronda dos tiros"
+            value={notes}
+            onChangeText={setNotes}
+            multiline
+            numberOfLines={3}
+          />
+        </View>
+
+        {/* Submit button */}
+        <Pressable
+          onPress={handleSubmit}
+          disabled={!isValid || createRoundMutation.isPending}
+          className={`rounded-2xl px-6 py-4 items-center ${
+            isValid && !createRoundMutation.isPending ? 'bg-brand' : 'bg-white/10'
+          }`}
+        >
+          {createRoundMutation.isPending ? (
+            <ActivityIndicator color="rgba(255, 255, 255, 0.6)" />
+          ) : (
+            <Text
+              className={`font-black text-center ${
+                isValid ? 'text-black' : 'text-white/40'
+              }`}
+            >
+              Criar ronda
+            </Text>
+          )}
+        </Pressable>
+
+        {createRoundMutation.isError && (
+          <View className="bg-red-500/20 border border-red-500/40 rounded-2xl px-4 py-3 mt-4">
+            <Text className="text-red-300 text-sm">
+              Erro ao criar ronda. Tenta novamente.
+            </Text>
+          </View>
+        )}
+      </View>
+    </ScrollView>
+  );
+}
