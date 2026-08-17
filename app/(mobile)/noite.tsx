@@ -1,8 +1,8 @@
 import { ScrollView, View, Text, FlatList, Pressable } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useSessionDetails } from '../../src/hooks/useSession';
-import { useRounds } from '../../src/hooks/useRounds';
-import { usePayments } from '../../src/hooks/usePayments';
+import { useSessionDetails, useRealtimeSessions } from '../../src/hooks/useSession';
+import { useRounds, useRealtimeRounds } from '../../src/hooks/useRounds';
+import { usePayments, useRealtimePayments } from '../../src/hooks/usePayments';
 import { useGroupProfiles } from '../../src/hooks/useProfiles';
 import { usePhotosBySession, useRealtimePhotos } from '../../src/hooks/usePhotos';
 import { usePhotoUrls } from '../../src/hooks/usePhotoUrls';
@@ -24,8 +24,13 @@ export default function NiteScreen() {
   const { data: photoUrls } = usePhotoUrls(photos);
 
   // Todos os hooks antes do primeiro return: a noite chega vazia no primeiro
-  // render e a ordem dos hooks não pode mudar quando chegar.
+  // render e a ordem dos hooks não pode mudar quando chegar. Uma noite é vivida
+  // por várias pessoas ao mesmo tempo — sem estas subscrições, o telemóvel que
+  // não pediu a ronda nunca a via aparecer.
+  useRealtimeRounds(safeSessionId);
+  useRealtimePayments(safeSessionId);
   useRealtimePhotos(safeSessionId);
+  useRealtimeSessions(session?.group_id ?? '');
 
   if (!session) {
     return (

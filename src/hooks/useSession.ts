@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   fetchActiveSessions,
@@ -6,6 +7,7 @@ import {
   createSession,
   updateSessionStatus,
 } from '../api/sessions';
+import { supabase } from '../api/supabase';
 import type { Session } from '../types';
 
 /**
@@ -108,4 +110,40 @@ export function useUpdateSessionStatus() {
       });
     },
   });
+}
+
+/**
+ * Subscrição realtime às sessões de um grupo.
+ *
+ * Cobre os dois casos que o telemóvel não provoca: alguém abre uma noite noutro
+ * dispositivo, ou fecha-a enquanto este ecrã está aberto. Invalida `['sessions']`
+ * inteiro — a lista de ativas, a de todas e os detalhes ficam todos sob esse
+ * prefixo.
+ */
+export function useRealtimeSessions(groupId: string) {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (!groupId) return;
+
+    const channel = supabase
+      .channel(`sessions:${groupId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'sessions',
+          filter: `group_id=eq.${groupId}`,
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['sessions'] });
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [groupId, queryClient]);
 }
