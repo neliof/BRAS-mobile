@@ -63,12 +63,20 @@ export default function DefinicoesModal() {
         </Pressable>
 
         {isAdmin && (
-          <Pressable
-            onPress={() => router.push('/modals/novo-membro')}
-            className="bg-white/10 rounded-2xl px-6 py-4 items-center border border-white/20 mb-2"
-          >
-            <Text className="text-white font-black text-center">Adicionar membro</Text>
-          </Pressable>
+          <>
+            <Pressable
+              onPress={() => router.push('/modals/novo-membro')}
+              className="bg-white/10 rounded-2xl px-6 py-4 items-center border border-white/20 mb-2"
+            >
+              <Text className="text-white font-black text-center">Adicionar membro</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => router.push('/modals/catalogo')}
+              className="bg-white/10 rounded-2xl px-6 py-4 items-center border border-white/20 mb-2"
+            >
+              <Text className="text-white font-black text-center">Bares e produtos</Text>
+            </Pressable>
+          </>
         )}
 
         <Pressable

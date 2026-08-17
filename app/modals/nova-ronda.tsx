@@ -27,7 +27,7 @@ export default function NovaRondaModal() {
   const router = useRouter();
   const params = useLocalSearchParams<{ sessionId?: string }>();
   const sessionId = params?.sessionId;
-  const { profile } = useSession();
+  const { profile, isAdmin } = useSession();
   const createRoundMutation = useCreateRound();
   const { data: session } = useSessionDetails(sessionId || '');
   const { data: rounds = [] } = useRounds(sessionId || '');
@@ -187,9 +187,19 @@ export default function NovaRondaModal() {
             data={products}
             keyExtractor={(item) => item.id}
             ListEmptyComponent={
-              <Text className="text-white/60 text-sm">
-                Ainda não há produtos configurados para este bar.
-              </Text>
+              <View>
+                <Text className="text-white/60 text-sm mb-2">
+                  Ainda não há produtos configurados para este bar.
+                </Text>
+                {isAdmin && (
+                  <Pressable
+                    onPress={() => router.push('/modals/catalogo')}
+                    className="bg-white/10 rounded-2xl px-4 py-3 border border-white/20 self-start"
+                  >
+                    <Text className="text-white font-semibold text-xs">Criar produtos</Text>
+                  </Pressable>
+                )}
+              </View>
             }
             renderItem={({ item }) => {
               const selected = selectedItems.find((i) => i.productId === item.id);

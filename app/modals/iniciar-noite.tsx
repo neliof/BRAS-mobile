@@ -16,7 +16,7 @@ import { useSession } from '../../src/state/SessionContext';
 
 export default function IniciarNoiteModal() {
   const router = useRouter();
-  const { grant, profile } = useSession();
+  const { grant, profile, isAdmin } = useSession();
   const groupId = grant?.groupId ?? '';
   const createSessionMutation = useCreateSession();
   const { data: venues = [], isLoading: venuesLoading } = useVenues();
@@ -96,9 +96,19 @@ export default function IniciarNoiteModal() {
               data={venues}
               keyExtractor={(item) => item.id}
               ListEmptyComponent={
-                <Text className="text-white/60 text-sm">
-                  Ainda não há bares configurados.
-                </Text>
+                <View>
+                  <Text className="text-white/60 text-sm mb-2">
+                    Ainda não há bares configurados.
+                  </Text>
+                  {isAdmin && (
+                    <Pressable
+                      onPress={() => router.push('/modals/catalogo')}
+                      className="bg-white/10 rounded-2xl px-4 py-3 border border-white/20 self-start"
+                    >
+                      <Text className="text-white font-semibold text-xs">Criar um bar</Text>
+                    </Pressable>
+                  )}
+                </View>
               }
               renderItem={({ item }) => (
                 <Pressable
