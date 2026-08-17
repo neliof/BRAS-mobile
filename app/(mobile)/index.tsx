@@ -2,6 +2,7 @@ import { ScrollView, View, Text, Pressable, FlatList } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSession } from '../../src/state/SessionContext';
 import { useSession as useSessionQuery, useAllSessions } from '../../src/hooks/useSession';
+import { useGroupProfiles } from '../../src/hooks/useProfiles';
 import { SessionCard } from '../../src/components/mobile/SessionCard';
 
 export default function HomeScreen() {
@@ -11,10 +12,11 @@ export default function HomeScreen() {
 
   const { data: activeSessions = [] } = useSessionQuery(groupId);
   const { data: allSessions = [] } = useAllSessions(groupId);
+  const { data: profiles = [] } = useGroupProfiles(groupId);
 
   const activeCount = activeSessions.length;
   const closedCount = allSessions.filter((s) => s.status === 'closed').length;
-  const totalMembers = profile ? 1 : 0;
+  const totalMembers = profiles.length;
 
   const handleSessionPress = (sessionId: string) => {
     router.push({

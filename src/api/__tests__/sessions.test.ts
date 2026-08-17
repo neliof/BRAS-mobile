@@ -51,7 +51,8 @@ describe('sessions API', () => {
           date: '2026-08-15',
           started_at: '2026-08-15T20:00:00Z',
           created_by: 'user-1',
-          member_ids: ['user-1', 'user-2'],
+          // Vem da tabela de junção, não de uma coluna.
+          session_members: [{ member_id: 'user-1' }, { member_id: 'user-2' }],
           rounds: [],
           payments: [],
           photos: [],
@@ -65,7 +66,9 @@ describe('sessions API', () => {
       expect(from).toHaveBeenCalledWith('sessions');
       expect(chain.eq).toHaveBeenCalledWith('group_id', 'grp-1');
       expect(chain.eq).toHaveBeenCalledWith('status', 'active');
-      expect(result).toEqual(mockSessions);
+      expect(result[0].member_ids).toEqual(['user-1', 'user-2']);
+      // `session_members` é detalhe do transporte e não deve escapar.
+      expect(result[0]).not.toHaveProperty('session_members');
     });
 
     it('devolve lista vazia se não há sessões ativas', async () => {
@@ -95,7 +98,7 @@ describe('sessions API', () => {
         date: '2026-08-15',
         started_at: '2026-08-15T20:00:00Z',
         created_by: 'user-1',
-        member_ids: ['user-1', 'user-2'],
+        session_members: [{ member_id: 'user-1' }, { member_id: 'user-2' }],
         rounds: [
           {
             id: 'round-1',
@@ -119,7 +122,9 @@ describe('sessions API', () => {
 
       expect(from).toHaveBeenCalledWith('sessions');
       expect(chain.eq).toHaveBeenCalledWith('id', 'sess-1');
-      expect(result).toEqual(mockSession);
+      expect(result.member_ids).toEqual(['user-1', 'user-2']);
+      expect(result.rounds).toHaveLength(1);
+      expect(result).not.toHaveProperty('session_members');
     });
 
     it('propaga erro se a sessão não existe', async () => {

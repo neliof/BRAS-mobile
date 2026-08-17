@@ -127,21 +127,25 @@ export default function NiteScreen() {
         />
       </View>
 
-      <View className="px-4 pb-8 gap-2">
-        <Pressable
-          onPress={handleAddRound}
-          className="bg-brand rounded-2xl px-6 py-4 items-center"
-        >
-          <Text className="text-black font-black text-center">Nova ronda</Text>
-        </Pressable>
+      {/* Uma noite fechada é histórico: nem se lhe juntam rondas nem se fecha
+          outra vez. */}
+      {session.status === 'active' && (
+        <View className="px-4 pb-8 gap-2">
+          <Pressable
+            onPress={handleAddRound}
+            className="bg-brand rounded-2xl px-6 py-4 items-center"
+          >
+            <Text className="text-black font-black text-center">Nova ronda</Text>
+          </Pressable>
 
-        <Pressable
-          onPress={handleCloseSession}
-          className="bg-white/10 rounded-2xl px-6 py-4 items-center border border-white/20"
-        >
-          <Text className="text-white font-black text-center">Fechar noite</Text>
-        </Pressable>
-      </View>
+          <Pressable
+            onPress={handleCloseSession}
+            className="bg-white/10 rounded-2xl px-6 py-4 items-center border border-white/20"
+          >
+            <Text className="text-white font-black text-center">Fechar noite</Text>
+          </Pressable>
+        </View>
+      )}
     </ScrollView>
   );
 }

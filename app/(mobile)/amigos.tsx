@@ -2,13 +2,15 @@ import { ScrollView, View, Text, FlatList, TextInput } from 'react-native';
 import { useState, useMemo } from 'react';
 import { useSession } from '../../src/state/SessionContext';
 import { useAllSessions } from '../../src/hooks/useSession';
+import { useGroupProfiles } from '../../src/hooks/useProfiles';
 import { computeMemberDebt } from '../../src/domain/debt';
 
 export default function AmigosScreen() {
-  const { grant, profile } = useSession();
+  const { grant } = useSession();
   const groupId = grant?.groupId ?? '';
 
   const { data: allSessions = [] } = useAllSessions(groupId);
+  const { data: profiles = [] } = useGroupProfiles(groupId);
   const [searchText, setSearchText] = useState('');
 
   const memberStats = useMemo(() => {
@@ -23,14 +25,18 @@ export default function AmigosScreen() {
       }
     >();
 
+    const nameOf = new Map(profiles.map((p) => [p.id, p.name]));
+
     for (const session of allSessions) {
-      if (session.status === 'closed') continue;
+      // Noites canceladas não contam; as fechadas contam, senão o total gasto
+      // esvaziava-se sempre que uma noite acabava.
+      if (session.status === 'cancelled') continue;
 
       for (const memberId of session.member_ids) {
         const debt = computeMemberDebt(session, memberId);
         const existing = stats.get(memberId) || {
           memberId,
-          memberName: memberId,
+          memberName: nameOf.get(memberId) ?? 'Membro',
           sessionsCount: 0,
           totalSpent: 0,
           pendingDebt: 0,
@@ -48,7 +54,7 @@ export default function AmigosScreen() {
     }
 
     return [...stats.values()];
-  }, [allSessions]);
+  }, [allSessions, profiles]);
 
   const filteredMembers = useMemo(() => {
     if (!searchText.trim()) return memberStats;

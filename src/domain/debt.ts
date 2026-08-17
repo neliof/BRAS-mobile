@@ -28,11 +28,13 @@ export function computeMemberDebt(session: Session, memberId: string): MemberDeb
   let totalCents: Cents = 0;
   let totalDrinks = 0;
 
-  for (const round of session.rounds) {
+  // Os `?? []` protegem contra sessões vindas de queries sem os embeds: é
+  // preferível uma dívida a zero do que a app a rebentar num ecrã de lista.
+  for (const round of session.rounds ?? []) {
     if (round.status === 'cancelled') continue;
 
-    for (const item of round.items) {
-      for (const consumption of item.consumptions) {
+    for (const item of round.items ?? []) {
+      for (const consumption of item.consumptions ?? []) {
         if (consumption.member_id !== memberId) continue;
 
         const cents = toCents(consumption.amount);
@@ -54,7 +56,7 @@ export function computeMemberDebt(session: Session, memberId: string): MemberDeb
     }
   }
 
-  const payment = session.payments.find((p) => p.member_id === memberId);
+  const payment = (session.payments ?? []).find((p) => p.member_id === memberId);
   const isPaid = payment?.status === 'paid';
 
   return {
@@ -80,12 +82,12 @@ export function computeSessionTotals(session: Session): {
   totalDrinks: number;
   perMember: MemberDebt[];
 } {
-  const memberIds = new Set<string>(session.member_ids);
+  const memberIds = new Set<string>(session.member_ids ?? []);
 
-  for (const round of session.rounds) {
+  for (const round of session.rounds ?? []) {
     if (round.status === 'cancelled') continue;
-    for (const item of round.items) {
-      for (const consumption of item.consumptions) {
+    for (const item of round.items ?? []) {
+      for (const consumption of item.consumptions ?? []) {
         memberIds.add(consumption.member_id);
       }
     }

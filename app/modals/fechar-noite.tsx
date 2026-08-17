@@ -22,6 +22,12 @@ export default function FecharNoiteModal() {
   const { data: session, isLoading } = useSessionDetails(sessionId || '');
   const updateSessionMutation = useUpdateSessionStatus();
 
+  // Os useState têm de ficar antes de qualquer return condicional, senão a
+  // contagem de hooks muda entre renders e o React rebenta.
+  const [rating, setRating] = useState<number | null>(null);
+  const [quoteOfTheNight, setQuoteOfTheNight] = useState('');
+  const [memoryNotes, setMemoryNotes] = useState('');
+
   if (!sessionId) {
     return (
       <View className="flex-1 bg-ink justify-center items-center">
@@ -29,10 +35,6 @@ export default function FecharNoiteModal() {
       </View>
     );
   }
-
-  const [rating, setRating] = useState<number | null>(null);
-  const [quoteOfTheNight, setQuoteOfTheNight] = useState('');
-  const [memoryNotes, setMemoryNotes] = useState('');
 
   const handleSubmit = async () => {
     if (!session || rating === null) {
@@ -50,8 +52,9 @@ export default function FecharNoiteModal() {
         },
       });
 
-      // Navega para ecrã inicial
-      router.push('/(mobile)');
+      // `replace` e não `push`: a noite já fechou, voltar atrás para o modal
+      // dela não faz sentido.
+      router.replace('/(mobile)');
     } catch (error) {
       console.error('Erro ao fechar noite:', error);
     }
