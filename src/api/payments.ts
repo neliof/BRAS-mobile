@@ -54,6 +54,42 @@ export async function createPayment(
   return payment;
 }
 
+/**
+ * Salda a dívida de um membro numa sessão.
+ *
+ * A dívida é calculada a partir dos consumos, não guardada — na primeira vez
+ * que alguém paga, ainda não existe linha em `payments`. O upsert sobre a
+ * chave única (session_id, member_id) cobre os dois casos: cria a linha se
+ * faltar, actualiza-a se já lá estiver.
+ */
+export async function settleMemberDebt(data: {
+  sessionId: string;
+  memberId: string;
+  amount: number;
+  paymentMethod: PaymentMethod;
+  notes?: string;
+}): Promise<Payment> {
+  const { data: payment, error } = await supabase
+    .from('payments')
+    .upsert(
+      {
+        session_id: data.sessionId,
+        member_id: data.memberId,
+        amount: data.amount,
+        payment_method: data.paymentMethod,
+        status: 'paid' as PaymentStatus,
+        paid_at: new Date().toISOString(),
+        notes: data.notes,
+      },
+      { onConflict: 'session_id,member_id' },
+    )
+    .select()
+    .single();
+
+  if (error) throw new Error(error.message);
+  return payment;
+}
+
 export async function markPaymentComplete(
   paymentId: string,
   paymentMethod?: PaymentMethod

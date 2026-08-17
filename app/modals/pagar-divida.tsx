@@ -10,7 +10,7 @@ import {
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSession } from '../../src/state/SessionContext';
 import { useSessionDetails } from '../../src/hooks/useSession';
-import { useMarkPaymentComplete } from '../../src/hooks/usePayments';
+import { useSettleMemberDebt } from '../../src/hooks/usePayments';
 import { computeMemberDebt } from '../../src/domain/debt';
 import { toEuros } from '../../src/domain/money';
 import type { PaymentMethod } from '../../src/types';
@@ -29,7 +29,7 @@ export default function PagarDividaModal() {
   const memberId = params?.memberId;
   const { profile } = useSession();
   const { data: session, isLoading } = useSessionDetails(sessionId || '');
-  const markPaymentMutation = useMarkPaymentComplete();
+  const settleDebtMutation = useSettleMemberDebt();
 
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null);
 
@@ -46,21 +46,23 @@ export default function PagarDividaModal() {
   const isPaid = memberDebt?.isPaid;
 
   const handleConfirmPayment = async () => {
-    const payment = session?.payments.find(
-      (p) => p.member_id === (memberId || profile?.id)
-    );
+    const payer = memberId || profile?.id;
 
-    if (payment && selectedMethod) {
-      try {
-        await markPaymentMutation.mutateAsync({
-          paymentId: payment.id,
-          paymentMethod: selectedMethod,
-        });
+    // A dívida é calculada a partir dos consumos e pode ainda não ter linha em
+    // `payments`. O upsert trata os dois casos.
+    if (!payer || !selectedMethod || !memberDebt) return;
 
-        router.back();
-      } catch (error) {
-        console.error('Erro ao marcar pagamento como completo:', error);
-      }
+    try {
+      await settleDebtMutation.mutateAsync({
+        sessionId,
+        memberId: payer,
+        amount: debtAmount,
+        paymentMethod: selectedMethod,
+      });
+
+      router.back();
+    } catch (error) {
+      console.error('Erro ao registar o pagamento:', error);
     }
   };
 
@@ -156,12 +158,12 @@ export default function PagarDividaModal() {
             {/* Confirm button */}
             <Pressable
               onPress={handleConfirmPayment}
-              disabled={!isValid || markPaymentMutation.isPending}
+              disabled={!isValid || settleDebtMutation.isPending}
               className={`rounded-2xl px-6 py-4 items-center ${
-                isValid && !markPaymentMutation.isPending ? 'bg-brand' : 'bg-white/10'
+                isValid && !settleDebtMutation.isPending ? 'bg-brand' : 'bg-white/10'
               }`}
             >
-              {markPaymentMutation.isPending ? (
+              {settleDebtMutation.isPending ? (
                 <ActivityIndicator color="rgba(255, 255, 255, 0.6)" />
               ) : (
                 <Text
@@ -174,10 +176,10 @@ export default function PagarDividaModal() {
               )}
             </Pressable>
 
-            {markPaymentMutation.isError && (
+            {settleDebtMutation.isError && (
               <View className="bg-red-500/20 border border-red-500/40 rounded-2xl px-4 py-3 mt-4">
                 <Text className="text-red-300 text-sm">
-                  Erro ao marcar pagamento. Tenta novamente.
+                  Erro ao registar o pagamento. Tenta novamente.
                 </Text>
               </View>
             )}

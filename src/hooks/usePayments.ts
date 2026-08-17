@@ -6,6 +6,7 @@ import {
   fetchPendingPayments,
   createPayment,
   markPaymentComplete,
+  settleMemberDebt,
   updatePayment,
 } from '../api/payments';
 import { supabase } from '../api/supabase';
@@ -87,6 +88,23 @@ export function useCreatePayment() {
       queryClient.invalidateQueries({
         queryKey: ['payments', sessionId, paymentData.memberId],
       });
+    },
+  });
+}
+
+/**
+ * Hook para saldar a dívida de um membro, exista ou não linha em `payments`.
+ * Invalida os pagamentos e a sessão, de onde sai a dívida calculada.
+ */
+export function useSettleMemberDebt() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: settleMemberDebt,
+
+    onSuccess: (_payment, { sessionId }) => {
+      queryClient.invalidateQueries({ queryKey: ['payments'] });
+      queryClient.invalidateQueries({ queryKey: ['sessions', 'details', sessionId] });
     },
   });
 }
