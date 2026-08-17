@@ -1,10 +1,11 @@
-import { View, Text, FlatList } from 'react-native';
+import { View, Text, FlatList, Pressable } from 'react-native';
 import type { MemberDebt as MemberDebtType } from '../../domain/debt';
 import type { Profile } from '../../types';
 
 interface MemberDebtProps {
   debt: MemberDebtType;
   profile?: Profile;
+  onPress?: () => void;
 }
 
 interface DebtBreakdownItemProps {
@@ -29,13 +30,17 @@ function DebtBreakdownItem({
   );
 }
 
-export function MemberDebt({ debt, profile }: MemberDebtProps): React.ReactElement {
+export function MemberDebt({ debt, profile, onPress }: MemberDebtProps): React.ReactElement {
   const totalAmount = debt.totalCents / 100;
   const statusColor = debt.isPaid ? 'text-white/40' : 'text-brand';
   const statusText = debt.isPaid ? 'Pago' : 'Pendente';
 
   return (
-    <View className="bg-white/10 rounded-2xl p-4 mb-3 border border-white/20">
+    <Pressable
+      onPress={onPress}
+      disabled={!onPress}
+      className="bg-white/10 rounded-2xl p-4 mb-3 border border-white/20"
+    >
       <View className="flex-row items-center justify-between mb-2">
         <View className="flex-1">
           <Text className="text-white font-bold">{profile?.name || 'Membro'}</Text>
@@ -62,6 +67,6 @@ export function MemberDebt({ debt, profile }: MemberDebtProps): React.ReactEleme
       )}
 
       <Text className="text-white/40 text-xs mt-2">{debt.totalDrinks} bebidas</Text>
-    </View>
+    </Pressable>
   );
 }

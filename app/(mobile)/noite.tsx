@@ -3,6 +3,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSessionDetails } from '../../src/hooks/useSession';
 import { useRounds } from '../../src/hooks/useRounds';
 import { usePayments } from '../../src/hooks/usePayments';
+import { useGroupProfiles } from '../../src/hooks/useProfiles';
 import { RoundItem } from '../../src/components/mobile/RoundItem';
 import { MemberDebt } from '../../src/components/mobile/MemberDebt';
 import { computeSessionTotals } from '../../src/domain/debt';
@@ -15,6 +16,7 @@ export default function NiteScreen() {
   const { data: session, isLoading: sessionLoading } = useSessionDetails(safeSessionId);
   const { data: rounds = [] } = useRounds(safeSessionId);
   const { data: payments = [] } = usePayments(safeSessionId);
+  const { data: profiles = [] } = useGroupProfiles(session?.group_id ?? '');
 
   if (!session) {
     return (
@@ -26,7 +28,6 @@ export default function NiteScreen() {
     );
   }
 
-  const totals = computeSessionTotals(session);
   const sessionWithPayments = {
     ...session,
     payments: payments || [],
@@ -47,11 +48,33 @@ export default function NiteScreen() {
     });
   };
 
+  const handleShowQrCode = () => {
+    router.push({
+      pathname: '/modals/qr-code',
+      params: { sessionId: safeSessionId },
+    });
+  };
+
+  const handlePayDebt = (memberId: string) => {
+    router.push({
+      pathname: '/modals/pagar-divida',
+      params: { sessionId: safeSessionId, memberId },
+    });
+  };
+
   return (
     <ScrollView className="flex-1 bg-ink">
-      <View className="px-4 pt-6 pb-4">
-        <Text className="text-white text-3xl font-black mb-1">{session.name}</Text>
-        <Text className="text-white/60 text-sm">{session.code}</Text>
+      <View className="px-4 pt-6 pb-4 flex-row items-start justify-between">
+        <View className="flex-1 pr-3">
+          <Text className="text-white text-3xl font-black mb-1">{session.name}</Text>
+          <Text className="text-white/60 text-sm">{session.code}</Text>
+        </View>
+        <Pressable
+          onPress={handleShowQrCode}
+          className="bg-white/10 rounded-2xl px-4 py-3 border border-white/20"
+        >
+          <Text className="text-white font-semibold text-xs">Partilhar</Text>
+        </Pressable>
       </View>
 
       <View className="px-4 mb-6">
@@ -93,7 +116,13 @@ export default function NiteScreen() {
         <FlatList
           data={totalsWithPayments.perMember}
           keyExtractor={(item) => item.memberId}
-          renderItem={({ item }) => <MemberDebt debt={item} />}
+          renderItem={({ item }) => (
+            <MemberDebt
+              debt={item}
+              profile={profiles.find((p) => p.id === item.memberId)}
+              onPress={() => handlePayDebt(item.memberId)}
+            />
+          )}
           scrollEnabled={false}
         />
       </View>
