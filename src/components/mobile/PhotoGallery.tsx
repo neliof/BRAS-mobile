@@ -44,14 +44,13 @@ export function PhotoGallery({
   }
 
   return (
-    <View className="flex-1">
+    <View className="flex-1 gap-1">
       <FlatList
         data={photos}
         keyExtractor={(item) => item.id}
         numColumns={numColumns}
         renderItem={({ item }) => <PhotoItem photo={item} onPress={onPhotoPress} />}
         scrollEnabled={false}
-        contentContainerStyle={{ gap: 4 }}
       />
     </View>
   );
