@@ -125,7 +125,9 @@ export default function ConquistasScreen() {
 
     switch (achievementId) {
       case '1':
-        return sessionCount > 0 ? 100 : 50;
+        // Sem nenhuma noite não há meio caminho andado: 50% dava um troféu
+        // desbloqueado a quem nunca apareceu.
+        return sessionCount > 0 ? 100 : 0;
       case '2':
         return Math.min((totalDrinks / 100) * 100, 100);
       case '3':

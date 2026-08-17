@@ -28,7 +28,9 @@ export default function HistoricoScreen() {
     const totalAmount = totals.totalCents / 100;
     const totalDrinks = totals.totalDrinks;
 
-    const date = new Date(session.date || session.started_at);
+    // `date` é uma DATE: `new Date('2026-08-15')` é meia-noite UTC e a hora
+    // mostrada seria sempre 00:00 ou 01:00. A hora a sério está em `started_at`.
+    const date = new Date(session.started_at || session.date);
     const dateStr = date.toLocaleDateString('pt-PT');
     const timeStr = date.toLocaleTimeString('pt-PT', {
       hour: '2-digit',

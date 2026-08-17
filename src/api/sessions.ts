@@ -132,11 +132,14 @@ export async function updateSessionStatus(
       ...updates,
     })
     .eq('id', sessionId)
-    .select()
+    // Com `select()` simples voltava a linha crua, sem `member_ids`, `rounds`,
+    // `payments` nem `photos` — e é este objeto que o hook mete no cache dos
+    // detalhes. O ecrã da noite lia campos indefinidos logo a seguir a fechar.
+    .select(SESSION_SELECT)
     .single();
 
   if (error) throw new Error(error.message);
-  return session;
+  return normalizeSession(session);
 }
 
 export async function fetchSessionsByDate(groupId: string, date: string): Promise<Session[]> {

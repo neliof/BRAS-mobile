@@ -195,6 +195,10 @@ describe('sessions API', () => {
         rating: 5,
         quote_of_the_night: 'Foi incrível!',
         ended_at: expect.any(String),
+        session_members: [{ member_id: 'user-1' }],
+        rounds: [],
+        payments: [],
+        photos: [],
       };
 
       mockQuery({ data: mockSession, error: null });
@@ -206,6 +210,32 @@ describe('sessions API', () => {
 
       expect(result.status).toBe('closed');
       expect(result.rating).toBe(5);
+    });
+
+    it('devolve a sessão com os embeds, que vão parar ao cache dos detalhes', async () => {
+      const chain = mockQuery({
+        data: {
+          id: 'sess-1',
+          group_id: 'grp-1',
+          status: 'closed',
+          session_members: [{ member_id: 'user-1' }, { member_id: 'user-2' }],
+          rounds: [{ id: 'round-1', items: [] }],
+          payments: [],
+          photos: [],
+        },
+        error: null,
+      });
+
+      const result = await updateSessionStatus('sess-1', 'closed');
+
+      // O ecrã da noite lê `member_ids.length` e itera `rounds` logo a seguir a
+      // fechar: sem estes campos rebenta em vez de mostrar a noite fechada.
+      expect(result.member_ids).toEqual(['user-1', 'user-2']);
+      expect(result.rounds).toHaveLength(1);
+      expect(result.payments).toEqual([]);
+      expect(result.photos).toEqual([]);
+      expect(result).not.toHaveProperty('session_members');
+      expect(chain.select).toHaveBeenCalledWith(expect.stringContaining('session_members'));
     });
 
     it('propaga erro de atualização', async () => {
