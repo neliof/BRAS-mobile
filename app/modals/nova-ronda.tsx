@@ -13,45 +13,9 @@ import { useSession } from '../../src/state/SessionContext';
 import { useCreateRound, useRounds } from '../../src/hooks/useRounds';
 import { useSessionDetails } from '../../src/hooks/useSession';
 import { useActiveProducts } from '../../src/hooks/useCatalog';
+import { useGroupProfiles } from '../../src/hooks/useProfiles';
 import { buildRound, type RoundDraftItem, RoundValidationError } from '../../src/domain/rounds';
 import type { Product } from '../../src/types';
-
-// TODO: Substituir MOCK_PRODUCTS por query real com hooks (Tasks 1-2)
-// const MOCK_PRODUCTS: Product[] = [
-//   {
-//     id: '1',
-//     name: 'Super Bock',
-//     category: 'cerveja',
-//     unit_size: 'Caneca 0.5L',
-//     image_url: '',
-//     current_price: 2.50,
-//     active: true,
-//     created_at: new Date().toISOString(),
-//   },
-//   {
-//     id: '2',
-//     name: 'Sagres',
-//     category: 'cerveja',
-//     unit_size: 'Caneca 0.5L',
-//     image_url: '',
-//     current_price: 2.50,
-//     active: true,
-//     created_at: new Date().toISOString(),
-//   },
-//   {
-//     id: '3',
-//     name: 'Shot de Vodka',
-//     category: 'shots',
-//     unit_size: 'Shot',
-//     image_url: '',
-//     current_price: 1.50,
-//     active: true,
-//     created_at: new Date().toISOString(),
-//   },
-// ];
-
-// Placeholder vazio até integração dos hooks reais
-const MOCK_PRODUCTS: Product[] = [];
 
 interface RoundItemDraft {
   productId: string;
@@ -68,6 +32,7 @@ export default function NovaRondaModal() {
   const { data: session } = useSessionDetails(sessionId || '');
   const { data: rounds = [] } = useRounds(sessionId || '');
   const { data: products = [], isLoading: productsLoading } = useActiveProducts(session?.venue_id);
+  const { data: profiles = [] } = useGroupProfiles(session?.group_id ?? '');
   const [validationError, setValidationError] = useState<string | null>(null);
 
   const [selectedItems, setSelectedItems] = useState<RoundItemDraft[]>([]);
@@ -84,18 +49,27 @@ export default function NovaRondaModal() {
 
   const handleAddProduct = (product: Product) => {
     const existing = selectedItems.find((item) => item.productId === product.id);
+
+    // Sem `setSelectedItems` nada disto chegava ao ecrã: tocar outra vez num
+    // produto já escolhido mexia no objeto em estado e o React não voltava a
+    // desenhar.
     if (existing) {
-      existing.quantity += 1;
-    } else {
-      setSelectedItems([
-        ...selectedItems,
-        {
-          productId: product.id,
-          quantity: 1,
-          consumers: profile ? [{ memberId: profile.id, quantity: 1 }] : [],
-        },
-      ]);
+      setSelectedItems(
+        selectedItems.map((item) =>
+          item.productId === product.id ? { ...item, quantity: item.quantity + 1 } : item,
+        ),
+      );
+      return;
     }
+
+    setSelectedItems([
+      ...selectedItems,
+      {
+        productId: product.id,
+        quantity: 1,
+        consumers: profile ? [{ memberId: profile.id, quantity: 1 }] : [],
+      },
+    ]);
   };
 
   const handleUpdateQuantity = (productId: string, quantity: number) => {
@@ -111,16 +85,19 @@ export default function NovaRondaModal() {
   };
 
   const handleToggleConsumer = (productIndex: number, memberId: string) => {
-    const item = selectedItems[productIndex];
-    const existingConsumer = item.consumers.find((c) => c.memberId === memberId);
+    setSelectedItems(
+      selectedItems.map((item, index) => {
+        if (index !== productIndex) return item;
 
-    if (existingConsumer) {
-      item.consumers = item.consumers.filter((c) => c.memberId !== memberId);
-    } else {
-      item.consumers.push({ memberId, quantity: 1 });
-    }
-
-    setSelectedItems([...selectedItems]);
+        const isConsumer = item.consumers.some((c) => c.memberId === memberId);
+        return {
+          ...item,
+          consumers: isConsumer
+            ? item.consumers.filter((c) => c.memberId !== memberId)
+            : [...item.consumers, { memberId, quantity: 1 }],
+        };
+      }),
+    );
   };
 
   const handleSubmit = async () => {
@@ -138,7 +115,18 @@ export default function NovaRondaModal() {
         requestedBy: profile.id,
         createdBy: profile.id,
         createdAt: new Date().toISOString(),
-        items: selectedItems as RoundDraftItem[],
+        // O domínio exige que os pesos dos consumidores somem, no mínimo, a
+        // quantidade pedida. A interface só pergunta *quem* bebeu, logo o peso
+        // é a quantidade dividida em partes iguais — duas canecas para uma
+        // pessoa dão peso 2, não 1, e a validação deixa de rebentar.
+        items: selectedItems.map<RoundDraftItem>((item) => ({
+          productId: item.productId,
+          quantity: item.quantity,
+          consumers: item.consumers.map((consumer) => ({
+            memberId: consumer.memberId,
+            quantity: item.quantity / item.consumers.length,
+          })),
+        })),
         products,
         notes: notes || undefined,
       });
@@ -179,7 +167,9 @@ export default function NovaRondaModal() {
     }
   };
 
-  const isValid = selectedItems.length > 0 && selectedItems.every((item) => item.consumers.length > 0);
+  const isValid =
+    selectedItems.length > 0 &&
+    selectedItems.every((item) => item.consumers.length > 0 && item.quantity > 0);
 
   return (
     <ScrollView className="flex-1 bg-ink">
@@ -293,7 +283,9 @@ export default function NovaRondaModal() {
                                 : 'border-white/20'
                             }`}
                           />
-                          <Text className="text-white/80 text-sm">{memberId}</Text>
+                          <Text className="text-white/80 text-sm">
+                            {profiles.find((p) => p.id === memberId)?.name ?? 'Membro'}
+                          </Text>
                         </Pressable>
                       )}
                       scrollEnabled={false}
