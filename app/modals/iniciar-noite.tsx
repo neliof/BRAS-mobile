@@ -54,6 +54,11 @@ const MOCK_MEMBERS: Profile[] = [];
 export default function IniciarNoiteModal() {
   const router = useRouter();
   const { grant, profile } = useSession();
+
+  if (!grant || !profile) {
+    return <View className="flex-1 bg-ink p-4 justify-center"><Text className="text-white">Acesso não autorizado</Text></View>;
+  }
+
   const createSessionMutation = useCreateSession();
 
   const [sessionName, setSessionName] = useState('');
