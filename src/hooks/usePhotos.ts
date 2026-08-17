@@ -62,7 +62,7 @@ export function useUploadPhoto() {
 
   return useMutation({
     mutationFn: (data: {
-      groupId?: string;
+      groupId: string;
       sessionId?: string;
       uploadedBy: string;
       imageUrl: string;
@@ -178,7 +178,8 @@ export function useDeletePhoto() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (photoId: string) => deletePhoto(photoId),
+    mutationFn: ({ photoId, imagePath }: { photoId: string; imagePath?: string }) =>
+      deletePhoto(photoId, imagePath),
 
     onSuccess: () => {
       // Invalida todos os queries de fotos

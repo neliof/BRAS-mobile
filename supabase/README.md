@@ -131,10 +131,32 @@ Políticas criadas: `SELECT` e `INSERT` para quem partilha o grupo, `DELETE` só
 para admin desse grupo. Não há `UPDATE` — um objeto substitui-se apagando e
 voltando a carregar.
 
-## Estado conhecido em aberto
+## 0004 — Snapshot do produto em `round_items`
 
-Upload de fotos ainda não existe no cliente: `uploadPhoto` só grava um
-`image_url` na tabela `photos`, ninguém chama `supabase.storage`, e o botão
-"Carregar foto" no ecrã Memórias é um no-op. A `0003` deixa o lado do servidor
-pronto; falta o seletor de imagem, o upload para `<group_id>/…` e os URLs
-assinados.
+Congela `product_name` e `product_image` na linha da ronda. Sem isto, uma ronda
+de há meses aparecia com o nome que o produto tem hoje, e a "Nova ronda" falha
+porque o cliente escreve estas colunas.
+
+## 0005 — Fotos: UPDATE e `group_id` obrigatório
+
+A `0001` deu a `photos` políticas de `SELECT`, `INSERT` e `DELETE` e nenhuma de
+`UPDATE`: marcar pessoas ou corrigir a legenda era negado em silêncio (o
+`UPDATE` não encontra linha e devolve zero linhas, sem erro). A `0005` cria
+`photos_update` para qualquer membro do grupo — é conteúdo partilhado; apagar
+continua a ser só do administrador.
+
+Na mesma migração, `group_id` passa a `NOT NULL`, com backfill a partir de
+`sessions`. As três políticas leem essa coluna: uma foto gravada só com
+`session_id` ficava invisível para toda a gente e nem um administrador a
+conseguia apagar.
+
+## Estado do lado do cliente
+
+O upload de fotos existe desde `5acd7d9`: `src/api/media.ts` carrega para
+`<group_id>/<session_id|grupo>/<nome>.<ext>` e guarda **o caminho** do objeto em
+`photos.image_url` — um URL assinado expira, guardá-lo era guardar lixo. A
+leitura passa por `signedPhotoUrls`, que assina em lote e deixa passar URLs
+absolutos antigos escritos pela app web.
+
+Em aberto: nada depende de servidor. As migrações `0003`, `0004` e `0005` ainda
+têm de ser aplicadas neste projeto Supabase.

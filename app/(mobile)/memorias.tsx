@@ -47,7 +47,14 @@ export default function MemoriasScreen() {
             </Text>
           </View>
         ) : (
-          <PhotoGallery photos={photos} urls={urls} numColumns={2} />
+          <PhotoGallery
+            photos={photos}
+            urls={urls}
+            numColumns={2}
+            onPhotoPress={(photo) =>
+              router.push({ pathname: '/modals/foto', params: { photoId: photo.id } })
+            }
+          />
         )}
       </View>
     </ScrollView>

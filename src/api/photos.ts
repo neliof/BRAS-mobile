@@ -1,3 +1,4 @@
+import { removePhotoImage } from './media';
 import { supabase } from './supabase';
 import type { Photo } from '../types';
 
@@ -41,15 +42,17 @@ export async function fetchPhotosByGroup(groupId: string): Promise<Photo[]> {
 }
 
 export async function uploadPhoto(data: {
-  groupId?: string;
+  groupId: string;
   sessionId?: string;
   uploadedBy: string;
   imageUrl: string;
   caption?: string;
   taggedMemberIds?: string[];
 }): Promise<Photo> {
-  if (!data.groupId && !data.sessionId) {
-    throw new Error('uploadPhoto: groupId ou sessionId é obrigatório');
+  // As três políticas de `photos` leem `group_id`. Sem ele a foto entra na
+  // tabela e fica invisível para toda a gente, sem forma de a apagar.
+  if (!data.groupId) {
+    throw new Error('uploadPhoto: groupId é obrigatório');
   }
 
   const { data: photo, error } = await supabase
@@ -98,7 +101,19 @@ export async function updatePhotoCaption(photoId: string, caption: string): Prom
   return photo;
 }
 
-export async function deletePhoto(photoId: string): Promise<void> {
+/**
+ * Apaga a foto: primeiro o ficheiro, depois a linha.
+ *
+ * Por esta ordem porque as duas operações exigem administrador do grupo. Se a
+ * remoção do ficheiro falhar, nada mudou e o erro é honesto. Ao contrário,
+ * ficaria uma linha a apontar para um ficheiro que já não existe — a galeria
+ * tolera isso (o caminho não assina e some), mas é um estado sujo sem ganho.
+ */
+export async function deletePhoto(photoId: string, imagePath?: string): Promise<void> {
+  if (imagePath) {
+    await removePhotoImage(imagePath);
+  }
+
   const { error } = await supabase.from('photos').delete().eq('id', photoId);
 
   if (error) throw new Error(error.message);
