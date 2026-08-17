@@ -111,12 +111,30 @@ WHERE schemaname = 'public' AND qual = 'true';
 Esperado: zero linhas. Qualquer linha devolvida é uma política a corrigir
 antes de continuar.
 
+## 0003 — Políticas de storage
+
+Resolve o buraco que a `0001` deixou em aberto: o bucket `bar-media` existia
+com RLS ativo e zero políticas, ou seja, tudo negado.
+
+Duas mudanças com impacto no cliente:
+
+**O bucket passa a privado.** A `0001` criou-o com `public = true`, o que dava
+leitura a qualquer pessoa com o URL, sem passar por RLS. Incompatível com fotos
+visíveis só a quem partilha o grupo. O cliente tem de usar
+`createSignedUrl` — `getPublicUrl` deixa de servir.
+
+**Convenção de caminho obrigatória: `<group_id>/<resto>`.** As políticas leem a
+primeira pasta do nome do objeto e comparam com os grupos do dispositivo.
+Upload fora desta convenção é recusado.
+
+Políticas criadas: `SELECT` e `INSERT` para quem partilha o grupo, `DELETE` só
+para admin desse grupo. Não há `UPDATE` — um objeto substitui-se apagando e
+voltando a carregar.
+
 ## Estado conhecido em aberto
 
-`storage.objects` (bucket `bar-media`) fica com RLS ativo e sem nenhuma
-política nesta migração — o schema original tinha duas políticas
-(`SELECT` por `bucket_id`, `INSERT` para autenticados) que não foram
-recriadas, porque a funcionalidade de fotos ainda não está implementada no
-cliente. Antes de implementar upload/leitura de fotos, definir políticas de
-`storage.objects` equivalentes às de `public.photos` (visível/gravável por
-quem partilha o grupo).
+Upload de fotos ainda não existe no cliente: `uploadPhoto` só grava um
+`image_url` na tabela `photos`, ninguém chama `supabase.storage`, e o botão
+"Carregar foto" no ecrã Memórias é um no-op. A `0003` deixa o lado do servidor
+pronto; falta o seletor de imagem, o upload para `<group_id>/…` e os URLs
+assinados.
