@@ -47,12 +47,12 @@ export default function HomeScreen() {
           <Text className="text-white/60 text-sm">Bem-vindo ao BRÁS</Text>
         </View>
         {/* O perfil passou a ser restaurado no arranque; sem isto não havia
-            forma de voltar ao ecrã de escolha. */}
+            forma de voltar ao ecrã de escolha nem de sair do grupo. */}
         <Pressable
-          onPress={() => router.push('/(gate)/perfil')}
+          onPress={() => router.push('/modals/definicoes')}
           className="bg-white/10 rounded-2xl px-4 py-3 border border-white/20"
         >
-          <Text className="text-white font-semibold text-xs">Trocar perfil</Text>
+          <Text className="text-white font-semibold text-xs">Definições</Text>
         </Pressable>
       </View>
 

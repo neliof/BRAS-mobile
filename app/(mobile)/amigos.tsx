@@ -1,16 +1,19 @@
-import { ScrollView, View, Text, FlatList, TextInput } from 'react-native';
+import { ScrollView, View, Text, FlatList, TextInput, Pressable, Alert } from 'react-native';
 import { useState, useMemo } from 'react';
+import { useRouter } from 'expo-router';
 import { useSession } from '../../src/state/SessionContext';
 import { useAllSessions } from '../../src/hooks/useSession';
-import { useGroupProfiles } from '../../src/hooks/useProfiles';
+import { useGroupProfiles, useDeactivateProfile } from '../../src/hooks/useProfiles';
 import { computeMemberDebt } from '../../src/domain/debt';
 
 export default function AmigosScreen() {
-  const { grant } = useSession();
+  const router = useRouter();
+  const { grant, isAdmin } = useSession();
   const groupId = grant?.groupId ?? '';
 
   const { data: allSessions = [] } = useAllSessions(groupId);
   const { data: profiles = [] } = useGroupProfiles(groupId);
+  const deactivate = useDeactivateProfile();
   const [searchText, setSearchText] = useState('');
 
   const memberStats = useMemo(() => {
@@ -26,6 +29,18 @@ export default function AmigosScreen() {
     >();
 
     const nameOf = new Map(profiles.map((p) => [p.id, p.name]));
+
+    // A lista parte dos perfis do grupo, não das noites: um membro criado hoje
+    // ainda não foi a nenhuma e desaparecia do ecrã que serve para o gerir.
+    for (const profile of profiles) {
+      stats.set(profile.id, {
+        memberId: profile.id,
+        memberName: profile.name,
+        sessionsCount: 0,
+        totalSpent: 0,
+        pendingDebt: 0,
+      });
+    }
 
     for (const session of allSessions) {
       // Noites canceladas não contam; as fechadas contam, senão o total gasto
@@ -65,6 +80,23 @@ export default function AmigosScreen() {
     );
   }, [memberStats, searchText]);
 
+  const handleDeactivate = (memberId: string, memberName: string) => {
+    Alert.alert(
+      'Desativar membro',
+      `${memberName} deixa de aparecer nas noites novas. O histórico fica intacto.`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Desativar',
+          style: 'destructive',
+          onPress: () => {
+            deactivate.mutate({ profileId: memberId, groupId });
+          },
+        },
+      ],
+    );
+  };
+
   const renderMemberItem = (member: typeof memberStats[0]) => {
     const totalSpent = member.totalSpent / 100;
     const pendingDebt = member.pendingDebt / 100;
@@ -92,6 +124,16 @@ export default function AmigosScreen() {
             </View>
           </View>
         )}
+
+        {isAdmin && (
+          <Pressable
+            onPress={() => handleDeactivate(member.memberId, member.memberName)}
+            disabled={deactivate.isPending}
+            className="mt-3 self-start rounded-lg px-3 py-1 bg-red-500/20"
+          >
+            <Text className="text-red-300 text-xs font-semibold">Desativar</Text>
+          </Pressable>
+        )}
       </View>
     );
   };
@@ -108,6 +150,15 @@ export default function AmigosScreen() {
           onChangeText={setSearchText}
           className="bg-white/10 text-white rounded-2xl px-4 py-3 border border-white/20 mb-4"
         />
+
+        {isAdmin && (
+          <Pressable
+            onPress={() => router.push('/modals/novo-membro')}
+            className="bg-brand rounded-2xl px-6 py-4 items-center"
+          >
+            <Text className="text-black font-black text-center">Adicionar membro</Text>
+          </Pressable>
+        )}
       </View>
 
       <View className="px-4 pb-8">
