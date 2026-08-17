@@ -1,6 +1,6 @@
 import { ScrollView, View, Text, FlatList, Pressable } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useSessionDetails, useUpdateSessionStatus } from '../../src/hooks/useSession';
+import { useSessionDetails } from '../../src/hooks/useSession';
 import { useRounds } from '../../src/hooks/useRounds';
 import { usePayments } from '../../src/hooks/usePayments';
 import { RoundItem } from '../../src/components/mobile/RoundItem';
@@ -15,7 +15,6 @@ export default function NiteScreen() {
   const { data: session, isLoading: sessionLoading } = useSessionDetails(safeSessionId);
   const { data: rounds = [] } = useRounds(safeSessionId);
   const { data: payments = [] } = usePayments(safeSessionId);
-  const { mutate: updateStatus } = useUpdateSessionStatus();
 
   if (!session) {
     return (
@@ -35,16 +34,15 @@ export default function NiteScreen() {
   const totalsWithPayments = computeSessionTotals(sessionWithPayments);
 
   const handleCloseSession = () => {
-    updateStatus({
-      sessionId: safeSessionId,
-      status: 'closed',
+    router.push({
+      pathname: '/modals/fechar-noite',
+      params: { sessionId: safeSessionId },
     });
-    router.back();
   };
 
   const handleAddRound = () => {
     router.push({
-      pathname: '/(mobile)/noite',
+      pathname: '/modals/nova-ronda',
       params: { sessionId: safeSessionId },
     });
   };

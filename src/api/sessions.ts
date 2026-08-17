@@ -42,7 +42,11 @@ export async function createSession(data: {
   memberIds: string[];
   createdBy: string;
 }): Promise<Session> {
-  const code = `BRAS-${new Date().toISOString().split('T')[0]}`;
+  // Sufixo aleatório: a coluna `code` é UNIQUE, e várias noites podem
+  // começar no mesmo dia.
+  const day = new Date().toISOString().split('T')[0];
+  const suffix = Math.random().toString(36).slice(2, 6).toUpperCase();
+  const code = `BRAS-${day}-${suffix}`;
   const { data: session, error } = await supabase
     .from('sessions')
     .insert({
@@ -53,16 +57,35 @@ export async function createSession(data: {
       status: 'active',
       started_at: new Date().toISOString(),
       created_by: data.createdBy,
-      member_ids: data.memberIds,
-      rounds: [],
-      payments: [],
-      photos: [],
     })
     .select()
     .single();
 
   if (error) throw new Error(error.message);
-  return session;
+
+  const { error: membersError } = await supabase
+    .from('session_members')
+    .insert(
+      data.memberIds.map((memberId) => ({
+        session_id: session.id,
+        member_id: memberId,
+      })),
+    );
+
+  if (membersError) {
+    // Sem transação do lado do cliente: apagar a sessão para não deixar
+    // uma noite órfã sem membros.
+    await supabase.from('sessions').delete().eq('id', session.id);
+    throw new Error(membersError.message);
+  }
+
+  return {
+    ...session,
+    member_ids: data.memberIds,
+    rounds: [],
+    payments: [],
+    photos: [],
+  };
 }
 
 export async function updateSessionStatus(

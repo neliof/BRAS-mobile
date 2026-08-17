@@ -161,7 +161,9 @@ describe('sessions API', () => {
       expect(from).toHaveBeenCalledWith('sessions');
       expect(chain.insert).toHaveBeenCalled();
       expect(result.status).toBe('active');
-      expect(result.code).toMatch(/^BRAS-\d{4}-\d{2}-\d{2}$/);
+      expect(chain.insert).toHaveBeenCalledWith(
+        expect.objectContaining({ code: expect.stringMatching(/^BRAS-\d{4}-\d{2}-\d{2}-[A-Z0-9]{4}$/) }),
+      );
     });
 
     it('propaga erro de inserção', async () => {

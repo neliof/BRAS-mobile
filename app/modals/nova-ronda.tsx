@@ -12,6 +12,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSession } from '../../src/state/SessionContext';
 import { useCreateRound, useRounds } from '../../src/hooks/useRounds';
 import { useSessionDetails } from '../../src/hooks/useSession';
+import { useActiveProducts } from '../../src/hooks/useCatalog';
 import { buildRound, type RoundDraftItem, RoundValidationError } from '../../src/domain/rounds';
 import type { Product } from '../../src/types';
 
@@ -66,6 +67,7 @@ export default function NovaRondaModal() {
   const createRoundMutation = useCreateRound();
   const { data: session } = useSessionDetails(sessionId || '');
   const { data: rounds = [] } = useRounds(sessionId || '');
+  const { data: products = [], isLoading: productsLoading } = useActiveProducts(session?.venue_id);
   const [validationError, setValidationError] = useState<string | null>(null);
 
   const [selectedItems, setSelectedItems] = useState<RoundItemDraft[]>([]);
@@ -137,7 +139,7 @@ export default function NovaRondaModal() {
         createdBy: profile.id,
         createdAt: new Date().toISOString(),
         items: selectedItems as RoundDraftItem[],
-        products: MOCK_PRODUCTS,
+        products,
         notes: notes || undefined,
       });
 
@@ -182,9 +184,17 @@ export default function NovaRondaModal() {
         {/* Produtos disponíveis */}
         <View className="mb-6">
           <Text className="text-white/80 text-sm font-semibold mb-3">Produtos</Text>
+          {productsLoading ? (
+            <ActivityIndicator color="#F27D26" />
+          ) : (
           <FlatList
-            data={MOCK_PRODUCTS}
+            data={products}
             keyExtractor={(item) => item.id}
+            ListEmptyComponent={
+              <Text className="text-white/60 text-sm">
+                Ainda não há produtos configurados para este bar.
+              </Text>
+            }
             renderItem={({ item }) => {
               const selected = selectedItems.find((i) => i.productId === item.id);
               return (
@@ -206,6 +216,7 @@ export default function NovaRondaModal() {
             }}
             scrollEnabled={false}
           />
+          )}
         </View>
 
         {/* Itens selecionados */}
@@ -213,7 +224,7 @@ export default function NovaRondaModal() {
           <View className="mb-6">
             <Text className="text-white/80 text-sm font-semibold mb-3">Seleção ({selectedItems.length})</Text>
             {selectedItems.map((item, index) => {
-              const product = MOCK_PRODUCTS.find((p) => p.id === item.productId);
+              const product = products.find((p) => p.id === item.productId);
               if (!product) return null;
 
               return (

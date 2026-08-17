@@ -24,7 +24,7 @@ export default function HomeScreen() {
   };
 
   const handleStartSession = () => {
-    router.push('/(mobile)/noite');
+    router.push('/modals/iniciar-noite');
   };
 
   return (
