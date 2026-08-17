@@ -3,16 +3,22 @@ import type { Photo } from '../../types';
 
 interface PhotoGalleryProps {
   photos: Photo[];
+  /**
+   * Mapa `image_url` → URL assinado, vindo de `usePhotoUrls`. O bucket é
+   * privado: sem entrada no mapa não há imagem para mostrar.
+   */
+  urls?: Record<string, string>;
   onPhotoPress?: (photo: Photo) => void;
   numColumns?: number;
 }
 
 interface PhotoItemProps {
   photo: Photo;
+  uri?: string;
   onPress?: (photo: Photo) => void;
 }
 
-function PhotoItem({ photo, onPress }: PhotoItemProps): React.ReactElement {
+function PhotoItem({ photo, uri, onPress }: PhotoItemProps): React.ReactElement {
   const handlePress = (): void => {
     if (onPress) {
       onPress(photo);
@@ -21,17 +27,16 @@ function PhotoItem({ photo, onPress }: PhotoItemProps): React.ReactElement {
 
   return (
     <Pressable onPress={handlePress} className="flex-1 aspect-square m-1 bg-white/10 rounded-lg overflow-hidden">
-      <Image
-        source={{ uri: photo.image_url }}
-        className="w-full h-full"
-        resizeMode="cover"
-      />
+      {uri ? (
+        <Image source={{ uri }} className="w-full h-full" resizeMode="cover" />
+      ) : null}
     </Pressable>
   );
 }
 
 export function PhotoGallery({
   photos,
+  urls,
   onPhotoPress,
   numColumns = 2,
 }: PhotoGalleryProps): React.ReactElement {
@@ -49,7 +54,9 @@ export function PhotoGallery({
         data={photos}
         keyExtractor={(item) => item.id}
         numColumns={numColumns}
-        renderItem={({ item }) => <PhotoItem photo={item} onPress={onPhotoPress} />}
+        renderItem={({ item }) => (
+          <PhotoItem photo={item} uri={urls?.[item.image_url]} onPress={onPhotoPress} />
+        )}
         scrollEnabled={false}
       />
     </View>

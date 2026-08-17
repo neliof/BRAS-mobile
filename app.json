@@ -25,7 +25,14 @@
     "plugins": [
       "expo-router",
       "expo-status-bar",
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "A app usa as tuas fotos para as memórias da noite.",
+          "cameraPermission": "A app usa a câmara para tirar fotos da noite."
+        }
+      ]
     ]
   }
 }

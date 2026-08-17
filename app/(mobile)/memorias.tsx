@@ -1,17 +1,20 @@
 import { ScrollView, View, Text, Pressable } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useSession } from '../../src/state/SessionContext';
 import { usePhotosByGroup } from '../../src/hooks/usePhotos';
+import { usePhotoUrls } from '../../src/hooks/usePhotoUrls';
 import { PhotoGallery } from '../../src/components/mobile/PhotoGallery';
 
 export default function MemoriasScreen() {
+  const router = useRouter();
   const { grant } = useSession();
   const groupId = grant?.groupId ?? '';
 
   const { data: photos = [], isLoading } = usePhotosByGroup(groupId);
+  const { data: urls } = usePhotoUrls(photos);
 
   const handleUploadPhoto = () => {
-    // Task 15: Implementar upload de fotos
-    // router.push('/(mobile)/modais/upload-foto');
+    router.push('/modals/carregar-foto');
   };
 
   return (
@@ -44,7 +47,7 @@ export default function MemoriasScreen() {
             </Text>
           </View>
         ) : (
-          <PhotoGallery photos={photos} numColumns={2} />
+          <PhotoGallery photos={photos} urls={urls} numColumns={2} />
         )}
       </View>
     </ScrollView>
