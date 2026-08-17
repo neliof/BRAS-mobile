@@ -1,61 +1,89 @@
-import { useEffect, useState } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useCallback, useEffect, useState } from 'react';
+import NetInfo from '@react-native-community/netinfo';
+import { useQueryClient } from '@tanstack/react-query';
+import { flushQueue, readQueue } from '../state/mutationQueue';
+import { offlineHandlers } from '../state/offline';
+
+export type SyncStatus = 'synced' | 'syncing' | 'pending' | 'offline';
 
 /**
- * Hook para monitorar estado de sincronização offline/online.
- * Verifica AsyncStorage para mutações pendentes e atualiza status.
+ * Estado da sincronização offline.
+ *
+ * Faz duas coisas: mostra quantas mutações estão por enviar, e esvazia a fila
+ * assim que a rede volta. O envio é disparado pela transição para online, não
+ * por um temporizador — esperar até 5 segundos com rede disponível seria tempo
+ * perdido à frente do utilizador.
  */
 export function useSyncStatus() {
-  const [syncStatus, setSyncStatus] = useState<'synced' | 'syncing' | 'pending'>('synced');
+  const queryClient = useQueryClient();
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>('synced');
   const [pendingCount, setPendingCount] = useState(0);
 
-  useEffect(() => {
-    let isMounted = true;
-
-    const checkPendingMutations = async () => {
-      try {
-        // Verificar AsyncStorage para chave de fila de mutações
-        const queueKey = '@bras_mutation_queue';
-        const queueData = await AsyncStorage.getItem(queueKey);
-
-        if (isMounted) {
-          if (queueData) {
-            try {
-              const queue = JSON.parse(queueData);
-              const count = Array.isArray(queue) ? queue.length : 0;
-              setPendingCount(count);
-              setSyncStatus(count > 0 ? 'pending' : 'synced');
-            } catch {
-              // Fila inválida, limpar
-              await AsyncStorage.removeItem(queueKey);
-              setPendingCount(0);
-              setSyncStatus('synced');
-            }
-          } else {
-            setPendingCount(0);
-            setSyncStatus('synced');
-          }
-        }
-      } catch (error) {
-        console.error('Erro ao verificar mutações pendentes:', error);
-        if (isMounted) {
-          setSyncStatus('synced');
-          setPendingCount(0);
-        }
-      }
-    };
-
-    // Verificar imediatamente
-    checkPendingMutations();
-
-    // Recheck a cada 5 segundos
-    const interval = setInterval(checkPendingMutations, 5000);
-
-    return () => {
-      isMounted = false;
-      clearInterval(interval);
-    };
+  const refreshCount = useCallback(async () => {
+    const queue = await readQueue();
+    setPendingCount(queue.length);
+    return queue.length;
   }, []);
 
-  return { syncStatus, pendingCount };
+  const flush = useCallback(async () => {
+    const pending = await refreshCount();
+    if (pending === 0) {
+      setSyncStatus('synced');
+      return;
+    }
+
+    setSyncStatus('syncing');
+
+    try {
+      const result = await flushQueue(offlineHandlers);
+
+      if (result.sent > 0) {
+        // A fila toca em rondas e pagamentos; ambos alimentam a sessão.
+        queryClient.invalidateQueries({ queryKey: ['rounds'] });
+        queryClient.invalidateQueries({ queryKey: ['payments'] });
+        queryClient.invalidateQueries({ queryKey: ['sessions'] });
+      }
+
+      if (result.dropped.length > 0) {
+        console.warn(
+          `Fila offline: ${result.dropped.length} mutações descartadas após esgotarem as tentativas.`,
+        );
+      }
+
+      setPendingCount(result.remaining);
+      setSyncStatus(result.remaining > 0 ? 'pending' : 'synced');
+    } catch (error) {
+      console.error('Erro ao esvaziar a fila offline:', error);
+      setSyncStatus('pending');
+    }
+  }, [queryClient, refreshCount]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const unsubscribe = NetInfo.addEventListener((state) => {
+      if (cancelled) return;
+
+      const online = state.isConnected !== false && state.isInternetReachable !== false;
+
+      if (!online) {
+        setSyncStatus('offline');
+        void refreshCount();
+        return;
+      }
+
+      void flush();
+    });
+
+    // Uma primeira leitura para o caso de a app abrir já com fila pendente e a
+    // rede não mudar de estado tão cedo.
+    void flush();
+
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
+  }, [flush, refreshCount]);
+
+  return { syncStatus, pendingCount, flush };
 }

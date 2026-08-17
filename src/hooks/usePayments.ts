@@ -10,6 +10,7 @@ import {
   updatePayment,
 } from '../api/payments';
 import { supabase } from '../api/supabase';
+import { runOrQueue } from '../state/offline';
 import type { Payment, PaymentMethod, PaymentStatus } from '../types';
 
 /**
@@ -100,7 +101,9 @@ export function useSettleMemberDebt() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: settleMemberDebt,
+    // Sem rede o pagamento fica em fila; o servidor confirma-o mais tarde.
+    mutationFn: (variables: Parameters<typeof settleMemberDebt>[0]) =>
+      runOrQueue('settleMemberDebt', variables, () => settleMemberDebt(variables)),
 
     onSuccess: (_payment, { sessionId }) => {
       queryClient.invalidateQueries({ queryKey: ['payments'] });

@@ -9,6 +9,7 @@ import {
   type CreateRoundItem,
 } from '../api/rounds';
 import { supabase } from '../api/supabase';
+import { runOrQueue } from '../state/offline';
 import type { Round } from '../types';
 
 /**
@@ -52,16 +53,15 @@ export function useRoundDetails(roundId: string) {
 
 /**
  * Hook para criar uma nova ronda.
- * Atualiza cache após criar.
+ *
+ * Sem rede, a ronda vai para a fila e a mutação devolve `null`: o pedido não
+ * se perde, mas ainda não há ronda do servidor para pôr no cache.
  */
 export function useCreateRound() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({
-      sessionId,
-      roundData,
-    }: {
+    mutationFn: (variables: {
       sessionId: string;
       roundData: {
         roundNumber: number;
@@ -70,14 +70,18 @@ export function useCreateRound() {
         notes?: string;
         items: CreateRoundItem[];
       };
-    }) => createRound(sessionId, roundData),
+    }) =>
+      runOrQueue('createRound', variables, () =>
+        createRound(variables.sessionId, variables.roundData),
+      ),
 
     onSuccess: (newRound, { sessionId }) => {
-      // Adiciona a nova ronda à lista
-      queryClient.setQueryData(['rounds', sessionId], (old: Round[] | undefined) => [
-        newRound,
-        ...(old || []),
-      ]);
+      if (newRound) {
+        queryClient.setQueryData(['rounds', sessionId], (old: Round[] | undefined) => [
+          newRound,
+          ...(old || []),
+        ]);
+      }
 
       // Invalida rondas ativas para refetch
       queryClient.invalidateQueries({
