@@ -16,10 +16,19 @@ const RATING_OPTIONS = [1, 2, 3, 4, 5];
 
 export default function FecharNoiteModal() {
   const router = useRouter();
-  const { sessionId } = useLocalSearchParams();
+  const params = useLocalSearchParams<{ sessionId?: string }>();
+  const sessionId = params?.sessionId;
   const { profile } = useSession();
-  const { data: session, isLoading } = useSessionDetails(sessionId as string);
+  const { data: session, isLoading } = useSessionDetails(sessionId || '');
   const updateSessionMutation = useUpdateSessionStatus();
+
+  if (!sessionId) {
+    return (
+      <View className="flex-1 bg-ink justify-center items-center">
+        <Text className="text-red-400 font-semibold">Erro: Sessão inválida</Text>
+      </View>
+    );
+  }
 
   const [rating, setRating] = useState<number | null>(null);
   const [quoteOfTheNight, setQuoteOfTheNight] = useState('');

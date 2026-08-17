@@ -24,20 +24,30 @@ const PAYMENT_METHODS: { id: PaymentMethod; label: string; icon: string }[] = [
 
 export default function PagarDividaModal() {
   const router = useRouter();
-  const { sessionId, memberId } = useLocalSearchParams();
+  const params = useLocalSearchParams<{ sessionId?: string; memberId?: string }>();
+  const sessionId = params?.sessionId;
+  const memberId = params?.memberId;
   const { profile } = useSession();
-  const { data: session, isLoading } = useSessionDetails(sessionId as string);
+  const { data: session, isLoading } = useSessionDetails(sessionId || '');
   const markPaymentMutation = useMarkPaymentComplete();
 
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null);
 
-  const memberDebt = session ? computeMemberDebt(session, (memberId as string) || profile?.id || '') : null;
+  if (!sessionId) {
+    return (
+      <View className="flex-1 bg-ink justify-center items-center">
+        <Text className="text-red-400 font-semibold">Erro: Sessão inválida</Text>
+      </View>
+    );
+  }
+
+  const memberDebt = session ? computeMemberDebt(session, memberId || profile?.id || '') : null;
   const debtAmount = memberDebt ? toEuros(memberDebt.totalCents) : 0;
   const isPaid = memberDebt?.isPaid;
 
   const handleConfirmPayment = async () => {
     const payment = session?.payments.find(
-      (p) => p.member_id === ((memberId as string) || profile?.id)
+      (p) => p.member_id === (memberId || profile?.id)
     );
 
     if (payment && selectedMethod) {

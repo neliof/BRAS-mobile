@@ -4,8 +4,17 @@ import { useSessionDetails } from '../../src/hooks/useSession';
 import * as Clipboard from 'expo-clipboard';
 
 export default function QRCodeModal() {
-  const { sessionId } = useLocalSearchParams();
-  const { data: session, isLoading } = useSessionDetails(sessionId as string);
+  const params = useLocalSearchParams<{ sessionId?: string }>();
+  const sessionId = params?.sessionId;
+  const { data: session, isLoading } = useSessionDetails(sessionId || '');
+
+  if (!sessionId) {
+    return (
+      <View className="flex-1 bg-ink justify-center items-center">
+        <Text className="text-red-400 font-semibold">Erro: Sessão inválida</Text>
+      </View>
+    );
+  }
 
   const handleCopyCode = async () => {
     if (session?.code) {
