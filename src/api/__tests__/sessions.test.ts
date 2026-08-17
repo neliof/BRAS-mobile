@@ -1,0 +1,212 @@
+import { fetchActiveSessions, createSession, fetchSessionDetails, updateSessionStatus } from '../sessions';
+import { supabase } from '../supabase';
+
+jest.mock('../supabase', () => ({ supabase: { from: jest.fn() } }));
+
+const from = supabase.from as unknown as jest.Mock;
+
+interface QueryChain {
+  select?: jest.Mock;
+  eq?: jest.Mock;
+  order?: jest.Mock;
+  insert?: jest.Mock;
+  update?: jest.Mock;
+  single?: jest.Mock;
+}
+
+function mockQuery(result: { data: unknown; error: unknown }) {
+  const chain: QueryChain = {
+    select: jest.fn(function (this: any) {
+      return this;
+    }),
+    eq: jest.fn(function (this: any) {
+      return this;
+    }),
+    order: jest.fn(() => Promise.resolve(result)),
+    insert: jest.fn(function (this: any) {
+      return this;
+    }),
+    update: jest.fn(function (this: any) {
+      return this;
+    }),
+    single: jest.fn(() => Promise.resolve(result)),
+  };
+  from.mockReturnValue(chain);
+  return chain;
+}
+
+beforeEach(() => jest.clearAllMocks());
+
+describe('sessions API', () => {
+  describe('fetchActiveSessions', () => {
+    it('obtém as sessões ativas de um grupo, por ordem descendente', async () => {
+      const mockSessions = [
+        {
+          id: 'sess-1',
+          group_id: 'grp-1',
+          status: 'active',
+          name: 'Noite de sexta',
+          code: 'BRAS-2026-0815',
+          venue_id: 'venue-1',
+          date: '2026-08-15',
+          started_at: '2026-08-15T20:00:00Z',
+          created_by: 'user-1',
+          member_ids: ['user-1', 'user-2'],
+          rounds: [],
+          payments: [],
+          photos: [],
+        },
+      ];
+
+      const chain = mockQuery({ data: mockSessions, error: null });
+
+      const result = await fetchActiveSessions('grp-1');
+
+      expect(from).toHaveBeenCalledWith('sessions');
+      expect(chain.eq).toHaveBeenCalledWith('group_id', 'grp-1');
+      expect(chain.eq).toHaveBeenCalledWith('status', 'active');
+      expect(result).toEqual(mockSessions);
+    });
+
+    it('devolve lista vazia se não há sessões ativas', async () => {
+      mockQuery({ data: [], error: null });
+
+      const result = await fetchActiveSessions('grp-1');
+
+      expect(result).toEqual([]);
+    });
+
+    it('propaga o erro Supabase', async () => {
+      mockQuery({ data: null, error: { message: 'Sem permissão' } });
+
+      await expect(fetchActiveSessions('grp-1')).rejects.toThrow('Sem permissão');
+    });
+  });
+
+  describe('fetchSessionDetails', () => {
+    it('obtém os detalhes completos de uma sessão com rondas, pagamentos e fotos', async () => {
+      const mockSession = {
+        id: 'sess-1',
+        group_id: 'grp-1',
+        status: 'active',
+        name: 'Noite de sexta',
+        code: 'BRAS-2026-0815',
+        venue_id: 'venue-1',
+        date: '2026-08-15',
+        started_at: '2026-08-15T20:00:00Z',
+        created_by: 'user-1',
+        member_ids: ['user-1', 'user-2'],
+        rounds: [
+          {
+            id: 'round-1',
+            session_id: 'sess-1',
+            round_number: 1,
+            requested_by: 'user-1',
+            created_by: 'user-1',
+            created_at: '2026-08-15T20:30:00Z',
+            status: 'active',
+            total_amount: 1000,
+            items: [],
+          },
+        ],
+        payments: [],
+        photos: [],
+      };
+
+      const chain = mockQuery({ data: mockSession, error: null });
+
+      const result = await fetchSessionDetails('sess-1');
+
+      expect(from).toHaveBeenCalledWith('sessions');
+      expect(chain.eq).toHaveBeenCalledWith('id', 'sess-1');
+      expect(result).toEqual(mockSession);
+    });
+
+    it('propaga erro se a sessão não existe', async () => {
+      mockQuery({ data: null, error: { message: 'Sessão não encontrada' } });
+
+      await expect(fetchSessionDetails('sess-invalid')).rejects.toThrow(
+        'Sessão não encontrada'
+      );
+    });
+  });
+
+  describe('createSession', () => {
+    it('cria uma nova sessão com código de acesso e data de início', async () => {
+      const mockSession = {
+        id: 'sess-new',
+        group_id: 'grp-1',
+        venue_id: 'venue-1',
+        name: 'Noite nova',
+        code: 'BRAS-2026-0817',
+        status: 'active',
+        started_at: expect.any(String),
+        created_by: 'user-1',
+        member_ids: ['user-1', 'user-2'],
+        rounds: [],
+        payments: [],
+        photos: [],
+      };
+
+      const chain = mockQuery({ data: mockSession, error: null });
+
+      const result = await createSession({
+        groupId: 'grp-1',
+        venueId: 'venue-1',
+        name: 'Noite nova',
+        memberIds: ['user-1', 'user-2'],
+        createdBy: 'user-1',
+      });
+
+      expect(from).toHaveBeenCalledWith('sessions');
+      expect(chain.insert).toHaveBeenCalled();
+      expect(result.status).toBe('active');
+      expect(result.code).toMatch(/^BRAS-\d{4}-\d{4}$/);
+    });
+
+    it('propaga erro de inserção', async () => {
+      mockQuery({ data: null, error: { message: 'Erro de BD' } });
+
+      await expect(
+        createSession({
+          groupId: 'grp-1',
+          venueId: 'venue-1',
+          name: 'Noite nova',
+          memberIds: ['user-1'],
+          createdBy: 'user-1',
+        })
+      ).rejects.toThrow('Erro de BD');
+    });
+  });
+
+  describe('updateSessionStatus', () => {
+    it('fecha uma sessão com rating e quote of the night', async () => {
+      const mockSession = {
+        id: 'sess-1',
+        group_id: 'grp-1',
+        status: 'closed',
+        rating: 5,
+        quote_of_the_night: 'Foi incrível!',
+        ended_at: expect.any(String),
+      };
+
+      mockQuery({ data: mockSession, error: null });
+
+      const result = await updateSessionStatus('sess-1', 'closed', {
+        rating: 5,
+        quote_of_the_night: 'Foi incrível!',
+      });
+
+      expect(result.status).toBe('closed');
+      expect(result.rating).toBe(5);
+    });
+
+    it('propaga erro de atualização', async () => {
+      mockQuery({ data: null, error: { message: 'Sessão bloqueada' } });
+
+      await expect(updateSessionStatus('sess-1', 'closed')).rejects.toThrow(
+        'Sessão bloqueada'
+      );
+    });
+  });
+});
