@@ -87,6 +87,7 @@ export default function IniciarNoiteModal() {
         groupId: grant.groupId,
         venueId: selectedVenueId,
         name: sessionName,
+        createdBy: profile?.id || '',
         memberIds: Array.from(selectedMembers),
       });
 
