@@ -19,6 +19,32 @@ function roundChain(result: { data: unknown; error: unknown }) {
   };
 }
 
+/**
+ * `createRound` lê primeiro o número mais alto da noite. Esta cadeia responde a
+ * essa leitura; `last` é o número já gravado, ou `undefined` para noite vazia.
+ */
+interface NumberChain {
+  select: jest.Mock;
+  eq: jest.Mock;
+  order: jest.Mock;
+  limit: jest.Mock;
+}
+
+function numberChain(last?: number) {
+  const chain: NumberChain = {
+    select: jest.fn(() => chain),
+    eq: jest.fn(() => chain),
+    order: jest.fn(() => chain),
+    limit: jest.fn(() =>
+      Promise.resolve({
+        data: last === undefined ? [] : [{ round_number: last }],
+        error: null,
+      }),
+    ),
+  };
+  return chain;
+}
+
 /** Cadeia de `insert(...).select()`, que resolve sem `.single()`. */
 function bulkInsertChain(result: { data: unknown; error: unknown }) {
   const select = jest.fn(() => Promise.resolve(result));
@@ -26,7 +52,6 @@ function bulkInsertChain(result: { data: unknown; error: unknown }) {
 }
 
 const DRAFT = {
-  roundNumber: 2,
   requestedBy: 'user-1',
   createdBy: 'user-1',
   items: [
@@ -60,11 +85,17 @@ describe('createRound', () => {
     });
 
     from
+      .mockReturnValueOnce(numberChain(2))
       .mockReturnValueOnce(rounds)
       .mockReturnValueOnce(items)
       .mockReturnValueOnce(consumption);
 
     const result = await createRound('sess-1', DRAFT);
+
+    // O número vem da noite que está no servidor, não da lista em cache.
+    expect(rounds.insert).toHaveBeenCalledWith(
+      expect.objectContaining({ round_number: 3 }),
+    );
 
     // `rounds` não tem coluna `items`: os artigos são linhas noutra tabela.
     expect(rounds.insert).toHaveBeenCalledWith(
@@ -99,7 +130,11 @@ describe('createRound', () => {
     const deleteEq = jest.fn(() => Promise.resolve({ error: null }));
     const del = { delete: jest.fn(() => ({ eq: deleteEq })) };
 
-    from.mockReturnValueOnce(rounds).mockReturnValueOnce(items).mockReturnValueOnce(del);
+    from
+      .mockReturnValueOnce(numberChain())
+      .mockReturnValueOnce(rounds)
+      .mockReturnValueOnce(items)
+      .mockReturnValueOnce(del);
 
     await expect(createRound('sess-1', DRAFT)).rejects.toThrow('RLS negado');
     expect(deleteEq).toHaveBeenCalledWith('id', 'round-1');
@@ -116,6 +151,7 @@ describe('createRound', () => {
     const del = { delete: jest.fn(() => ({ eq: deleteEq })) };
 
     from
+      .mockReturnValueOnce(numberChain(1))
       .mockReturnValueOnce(rounds)
       .mockReturnValueOnce(items)
       .mockReturnValueOnce(consumption)
@@ -123,6 +159,64 @@ describe('createRound', () => {
 
     await expect(createRound('sess-1', DRAFT)).rejects.toThrow('membro inexistente');
     expect(deleteEq).toHaveBeenCalledWith('id', 'round-1');
+  });
+
+  it('numera a partir de 1 numa noite sem rondas', async () => {
+    const rounds = roundChain({ data: { id: 'round-1' }, error: null });
+    const items = bulkInsertChain({ data: [{ id: 'ri-1' }], error: null });
+    const consumption = bulkInsertChain({ data: [], error: null });
+
+    from
+      .mockReturnValueOnce(numberChain())
+      .mockReturnValueOnce(rounds)
+      .mockReturnValueOnce(items)
+      .mockReturnValueOnce(consumption);
+
+    await createRound('sess-1', DRAFT);
+
+    expect(rounds.insert).toHaveBeenCalledWith(
+      expect.objectContaining({ round_number: 1 }),
+    );
+  });
+
+  it('volta a numerar se outro dispositivo apanhou o número primeiro', async () => {
+    const colidido = roundChain({
+      data: null,
+      error: { message: 'duplicate key', code: '23505' },
+    });
+    const aceite = roundChain({ data: { id: 'round-2' }, error: null });
+    const items = bulkInsertChain({ data: [{ id: 'ri-1' }], error: null });
+    const consumption = bulkInsertChain({ data: [], error: null });
+
+    from
+      .mockReturnValueOnce(numberChain(2))
+      .mockReturnValueOnce(colidido)
+      .mockReturnValueOnce(numberChain(3))
+      .mockReturnValueOnce(aceite)
+      .mockReturnValueOnce(items)
+      .mockReturnValueOnce(consumption);
+
+    const result = await createRound('sess-1', DRAFT);
+
+    expect(colidido.insert).toHaveBeenCalledWith(
+      expect.objectContaining({ round_number: 3 }),
+    );
+    expect(aceite.insert).toHaveBeenCalledWith(
+      expect.objectContaining({ round_number: 4 }),
+    );
+    expect(result.id).toBe('round-2');
+  });
+
+  it('não repete quando o erro não é de número repetido', async () => {
+    const recusado = roundChain({
+      data: null,
+      error: { message: 'RLS negado', code: '42501' },
+    });
+
+    from.mockReturnValueOnce(numberChain(1)).mockReturnValueOnce(recusado);
+
+    await expect(createRound('sess-1', DRAFT)).rejects.toThrow('RLS negado');
+    expect(recusado.insert).toHaveBeenCalledTimes(1);
   });
 });
 

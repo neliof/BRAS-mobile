@@ -64,7 +64,6 @@ export function useCreateRound() {
     mutationFn: (variables: {
       sessionId: string;
       roundData: {
-        roundNumber: number;
         requestedBy: string;
         createdBy: string;
         notes?: string;

@@ -3,13 +3,17 @@ import { View, Text, ScrollView, Pressable, ActivityIndicator, Alert } from 'rea
 import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSession } from '../../src/state/SessionContext';
+import { useSyncStatus } from '../../src/hooks/useSyncStatus';
 import { clearQueue, readQueue } from '../../src/state/mutationQueue';
+import { clearPersistedCache } from '../../src/state/queryPersist';
 
 export default function DefinicoesModal() {
   const router = useRouter();
   const { profile, isAdmin, signOut } = useSession();
   const queryClient = useQueryClient();
+  const { pendingCount, lastSyncedAt, syncNow } = useSyncStatus();
   const [busy, setBusy] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(0);
 
@@ -21,7 +25,20 @@ export default function DefinicoesModal() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [pendingCount]);
+
+  const handleSyncNow = async () => {
+    setSyncing(true);
+    setError(null);
+    try {
+      const done = await syncNow();
+      if (!done) setError('Sem rede. Tenta outra vez quando houver ligação.');
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'A sincronização falhou.');
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const handleSignOut = () => {
     // Rondas e pagamentos em fila pertencem à sessão deste grupo. Sem o vínculo
@@ -47,6 +64,9 @@ export default function DefinicoesModal() {
               // O cache guarda noites, dívidas e fotos do grupo de onde se
               // saiu; sem o limpar, o próximo código a entrar via-os.
               queryClient.clear();
+              // `clear()` só esvazia a memória. O cache em disco tem de sair
+              // também, senão o histórico do grupo anterior fica no telemóvel.
+              await clearPersistedCache();
               await clearQueue();
               // `replace` e não `back`: sem vínculo não há ecrã de grupo para
               // onde voltar.
@@ -78,6 +98,32 @@ export default function DefinicoesModal() {
               {pending} {pending === 1 ? 'alteração' : 'alterações'} por enviar
             </Text>
           )}
+        </View>
+
+        <View className="bg-white/10 rounded-2xl p-4 border border-white/20 mb-6">
+          <Text className="text-white/60 text-xs mb-1">Última sincronização</Text>
+          <Text className="text-white font-semibold">
+            {lastSyncedAt
+              ? new Date(lastSyncedAt).toLocaleString('pt-PT')
+              : 'Ainda não sincronizado neste telemóvel'}
+          </Text>
+          <Text className="text-white/40 text-xs mt-2">
+            Os dados ficam guardados no telemóvel e continuam visíveis sem rede.
+          </Text>
+
+          <Pressable
+            onPress={handleSyncNow}
+            disabled={syncing}
+            className={`rounded-2xl px-6 py-3 items-center mt-4 ${
+              syncing ? 'bg-white/10' : 'bg-brand'
+            }`}
+          >
+            {syncing ? (
+              <ActivityIndicator color="rgba(255, 255, 255, 0.6)" />
+            ) : (
+              <Text className="text-black font-black">Sincronizar agora</Text>
+            )}
+          </Pressable>
         </View>
 
         <Pressable

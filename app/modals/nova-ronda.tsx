@@ -111,6 +111,8 @@ export default function NovaRondaModal() {
       // Constrói e valida a ronda
       const newRound = buildRound({
         sessionId: session.id,
+        // Só para o objeto local que valida as contas. O número que fica
+        // gravado é o que o servidor atribui em `createRound`.
         roundNumber: rounds.length + 1,
         requestedBy: profile.id,
         createdBy: profile.id,
@@ -134,7 +136,6 @@ export default function NovaRondaModal() {
       await createRoundMutation.mutateAsync({
         sessionId: session.id,
         roundData: {
-          roundNumber: newRound.round_number,
           requestedBy: newRound.requested_by,
           createdBy: newRound.created_by,
           notes: newRound.notes,

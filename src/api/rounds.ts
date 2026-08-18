@@ -56,10 +56,27 @@ export interface CreateRoundItem {
  * Sem transação do lado do cliente: se um dos passos falhar, apaga-se a ronda,
  * e o `ON DELETE CASCADE` leva atrás os artigos e os consumos já inseridos.
  */
+/** Código do Postgres para violação de restrição única. */
+const UNIQUE_VIOLATION = '23505';
+
+/** Tentativas antes de desistir de encontrar um número livre. */
+const NUMBER_ATTEMPTS = 5;
+
+async function nextRoundNumber(sessionId: string): Promise<number> {
+  const { data, error } = await supabase
+    .from('rounds')
+    .select('round_number')
+    .eq('session_id', sessionId)
+    .order('round_number', { ascending: false })
+    .limit(1);
+
+  if (error) throw new Error(error.message);
+  return ((data?.[0]?.round_number as number | undefined) ?? 0) + 1;
+}
+
 export async function createRound(
   sessionId: string,
   data: {
-    roundNumber: number;
     requestedBy: string;
     createdBy: string;
     notes?: string;
@@ -68,25 +85,50 @@ export async function createRound(
 ): Promise<Round> {
   const totalAmount = data.items.reduce((sum, item) => sum + item.totalPrice, 0);
 
-  const { data: round, error } = await supabase
-    .from('rounds')
-    .insert({
-      session_id: sessionId,
-      round_number: data.roundNumber,
-      requested_by: data.requestedBy,
-      created_by: data.createdBy,
-      created_at: new Date().toISOString(),
-      notes: data.notes,
-      status: 'active',
-      total_amount: totalAmount,
-    })
-    .select()
-    .single();
+  // O número vem do servidor, não da lista que o telemóvel tem em cache: dois
+  // dispositivos na mesma noite — ou dois a esvaziar a fila offline — chegavam
+  // ambos ao mesmo `rounds.length + 1`. A restrição `rounds_session_number_unique`
+  // (migração 0006) recusa o segundo, e a tentativa seguinte já lê o número novo.
+  let round: { id: string } | null = null;
+  let lastError: { message: string; code?: string } | null = null;
 
-  if (error) throw new Error(error.message);
+  for (let attempt = 0; attempt < NUMBER_ATTEMPTS && !round; attempt += 1) {
+    const roundNumber = await nextRoundNumber(sessionId);
+
+    const { data: inserted, error } = await supabase
+      .from('rounds')
+      .insert({
+        session_id: sessionId,
+        round_number: roundNumber,
+        requested_by: data.requestedBy,
+        created_by: data.createdBy,
+        created_at: new Date().toISOString(),
+        notes: data.notes,
+        status: 'active',
+        total_amount: totalAmount,
+      })
+      .select()
+      .single();
+
+    if (!error) {
+      round = inserted;
+      break;
+    }
+
+    lastError = error;
+    if (error.code !== UNIQUE_VIOLATION) break;
+  }
+
+  if (!round) {
+    throw new Error(
+      lastError?.message ?? 'createRound: não foi possível numerar a ronda',
+    );
+  }
+
+  const created = round;
 
   const rollback = async (message: string): Promise<never> => {
-    await supabase.from('rounds').delete().eq('id', round.id);
+    await supabase.from('rounds').delete().eq('id', created.id);
     throw new Error(message);
   };
 
