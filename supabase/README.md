@@ -150,6 +150,20 @@ Na mesma migração, `group_id` passa a `NOT NULL`, com backfill a partir de
 `session_id` ficava invisível para toda a gente e nem um administrador a
 conseguia apagar.
 
+## 0006 — Numeração de rondas
+
+`UNIQUE(session_id, round_number)`. O número era decidido no cliente
+(`rounds.length + 1`): dois telemóveis na mesma noite, ou dois a esvaziar a fila
+offline depois da rede voltar, chegavam ambos ao mesmo número. Com a restrição, o
+segundo insert falha com `23505` e o cliente repete com o número seguinte.
+
+Se a tabela já tiver duplicados, a migração falha de propósito. Ver quais são:
+
+```sql
+SELECT session_id, round_number, count(*)
+FROM public.rounds GROUP BY 1, 2 HAVING count(*) > 1;
+```
+
 ## Estado do lado do cliente
 
 O upload de fotos existe desde `5acd7d9`: `src/api/media.ts` carrega para
@@ -158,5 +172,9 @@ O upload de fotos existe desde `5acd7d9`: `src/api/media.ts` carrega para
 leitura passa por `signedPhotoUrls`, que assina em lote e deixa passar URLs
 absolutos antigos escritos pela app web.
 
-Em aberto: nada depende de servidor. As migrações `0003`, `0004` e `0005` ainda
-têm de ser aplicadas neste projeto Supabase.
+Offline: as escritas passam pela fila `@bras_mutation_queue` e o cache de leitura
+é guardado em `@bras_query_cache`. O cache tem dados do grupo em claro no
+dispositivo — sair do grupo apaga os dois, além do código no SecureStore.
+
+Em aberto: as migrações `0003`, `0004`, `0005` e `0006` ainda têm de ser
+aplicadas neste projeto Supabase, por esta ordem.
