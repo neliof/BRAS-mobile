@@ -4,7 +4,6 @@
     "slug": "bras",
     "scheme": "bras",
     "version": "1.0.0",
-    "sdkVersion": "54.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -21,7 +20,8 @@
       "predictiveBackGestureEnabled": false,
       "permissions": [
         "android.permission.RECORD_AUDIO"
-      ]
+      ],
+      "package": "com.brasaquelebar"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -37,6 +37,14 @@
           "cameraPermission": "A app usa a câmara para tirar fotos da noite."
         }
       ]
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "79e40c90-ae17-44cc-b56c-56a15b9d7b6a"
+      },
+      "EXPO_PUBLIC_SUPABASE_URL": "https://mbrwibyvtissmmgcitec.supabase.co",
+      "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_atX_uUytce1XDEr_Qe3PTg_nnOT5FQh"
+    }
   }
 }
