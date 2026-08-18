@@ -1,6 +1,5 @@
 import { ScrollView, View, Text, Pressable, FlatList } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Beer, Users, Calendar, Camera, Trophy, Settings } from 'lucide-react-native';
 import { useSession } from '../../src/state/SessionContext';
 import {
   useSession as useSessionQuery,
@@ -91,45 +90,15 @@ export default function HomeScreen() {
         </View>
       )}
 
-      <View className="px-4 mb-6">
+      {/* Os atalhos passaram para a barra do topo, presente em todos os
+          ecrãs — ver o layout (mobile). */}
+      <View className="px-4 pb-8">
         <Pressable
           onPress={handleStartSession}
           className="bg-brand rounded-2xl px-6 py-4 items-center"
         >
           <Text className="text-black font-black text-center">Iniciar noite</Text>
         </Pressable>
-      </View>
-
-      {/* Atalhos em quadrados grandes: mais fáceis de acertar num bar do que
-          a barra de abas. A barra continua em baixo, em todos os ecrãs. */}
-      <View className="px-4 pb-8">
-        <Text className="text-white/60 text-sm mb-3 font-semibold">Atalhos</Text>
-        <View className="flex-row flex-wrap justify-between">
-          {[
-            {
-              label: 'Noite',
-              Icon: Beer,
-              onPress: () =>
-                activeSessions[0]
-                  ? handleSessionPress(activeSessions[0].id)
-                  : router.push('/(mobile)/noite'),
-            },
-            { label: 'Amigos', Icon: Users, onPress: () => router.push('/(mobile)/amigos') },
-            { label: 'Histórico', Icon: Calendar, onPress: () => router.push('/(mobile)/historico') },
-            { label: 'Memórias', Icon: Camera, onPress: () => router.push('/(mobile)/memorias') },
-            { label: 'Troféus', Icon: Trophy, onPress: () => router.push('/(mobile)/conquistas') },
-            { label: 'Definições', Icon: Settings, onPress: () => router.push('/modals/definicoes') },
-          ].map(({ label, Icon, onPress }) => (
-            <Pressable
-              key={label}
-              onPress={onPress}
-              className="w-[31%] aspect-square bg-white/10 border border-white/20 rounded-2xl items-center justify-center mb-3"
-            >
-              <Icon size={30} color="#F27D26" />
-              <Text className="text-white font-semibold text-xs mt-2">{label}</Text>
-            </Pressable>
-          ))}
-        </View>
       </View>
     </ScrollView>
   );
