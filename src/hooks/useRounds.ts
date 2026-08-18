@@ -124,7 +124,8 @@ export function useRealtimeRounds(sessionId: string) {
     if (!sessionId) return;
 
     const channel = supabase
-      .channel(`rounds:${sessionId}`)
+      // Sufixo único por montagem — nome repetido devolve o canal já subscrito.
+      .channel(`rounds:${sessionId}:${Math.random().toString(36).slice(2)}`)
       .on(
         'postgres_changes',
         {

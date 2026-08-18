@@ -142,8 +142,11 @@ export function useRealtimeSessions(groupId: string) {
   useEffect(() => {
     if (!groupId) return;
 
+    // Sufixo único por montagem: com abas, o Início e a Noite montam este hook
+    // ao mesmo tempo, e `supabase.channel()` devolve o canal existente quando o
+    // nome repete — juntar callbacks a um canal já subscrito atira erro.
     const channel = supabase
-      .channel(`sessions:${groupId}`)
+      .channel(`sessions:${groupId}:${Math.random().toString(36).slice(2)}`)
       .on(
         'postgres_changes',
         {

@@ -178,7 +178,8 @@ export function useRealtimePayments(sessionId: string) {
     if (!sessionId) return;
 
     const channel = supabase
-      .channel(`payments:${sessionId}`)
+      // Sufixo único por montagem — nome repetido devolve o canal já subscrito.
+      .channel(`payments:${sessionId}:${Math.random().toString(36).slice(2)}`)
       .on(
         'postgres_changes',
         {
