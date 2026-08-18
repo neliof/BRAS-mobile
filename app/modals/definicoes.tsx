@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { View, Text, ScrollView, Pressable, ActivityIndicator, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSession } from '../../src/state/SessionContext';
+import { clearQueue, readQueue } from '../../src/state/mutationQueue';
 
 export default function DefinicoesModal() {
   const router = useRouter();
@@ -10,11 +11,29 @@ export default function DefinicoesModal() {
   const queryClient = useQueryClient();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pending, setPending] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    void readQueue().then((queue) => {
+      if (!cancelled) setPending(queue.length);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleSignOut = () => {
+    // Rondas e pagamentos em fila pertencem à sessão deste grupo. Sem o vínculo
+    // o RLS recusa-os para sempre, e ficariam a tentar até serem descartados.
+    const pendingWarning =
+      pending > 0
+        ? ` Há ${pending} ${pending === 1 ? 'alteração' : 'alterações'} por enviar que se perdem.`
+        : '';
+
     Alert.alert(
       'Sair do grupo',
-      'O código do grupo é apagado deste telemóvel. Para voltar a entrar tens de o introduzir outra vez.',
+      `O código do grupo é apagado deste telemóvel. Para voltar a entrar tens de o introduzir outra vez.${pendingWarning}`,
       [
         { text: 'Cancelar', style: 'cancel' },
         {
@@ -28,6 +47,7 @@ export default function DefinicoesModal() {
               // O cache guarda noites, dívidas e fotos do grupo de onde se
               // saiu; sem o limpar, o próximo código a entrar via-os.
               queryClient.clear();
+              await clearQueue();
               // `replace` e não `back`: sem vínculo não há ecrã de grupo para
               // onde voltar.
               router.replace('/(gate)/codigo');
@@ -53,6 +73,11 @@ export default function DefinicoesModal() {
           <Text className="text-white/60 text-xs mt-2">
             {isAdmin ? 'Administrador do grupo' : 'Membro do grupo'}
           </Text>
+          {pending > 0 && (
+            <Text className="text-brand text-xs mt-2">
+              {pending} {pending === 1 ? 'alteração' : 'alterações'} por enviar
+            </Text>
+          )}
         </View>
 
         <Pressable

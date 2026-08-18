@@ -1,14 +1,21 @@
-import { useEffect } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { restoreAccess } from '../src/api/access';
 import { fetchGroupProfiles } from '../src/api/profiles';
-import { readCurrentProfileId } from '../src/api/storage';
+import { readCurrentProfileId, readGroupCode } from '../src/api/storage';
 import { useSession } from '../src/state/SessionContext';
 
 export default function Index() {
   const router = useRouter();
   const { setGrant, setProfile } = useSession();
+  const [failed, setFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+
+  const retry = useCallback(() => {
+    setFailed(false);
+    setAttempt((current) => current + 1);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -46,14 +53,42 @@ export default function Index() {
       router.replace('/(gate)/perfil');
     }
 
-    boot().catch(() => {
-      if (!cancelled) router.replace('/(gate)/codigo');
+    boot().catch(async () => {
+      if (cancelled) return;
+
+      // Um código guardado que falha a revalidar por falta de rede não é um
+      // código inválido — esse caso `restoreAccess` trata, apagando-o. Mandar o
+      // utilizador para o ecrã de entrada seria pedir-lhe que escrevesse um
+      // código que também não pode ser validado sem rede.
+      const stored = await readGroupCode();
+      if (cancelled) return;
+
+      if (stored) {
+        setFailed(true);
+        return;
+      }
+
+      router.replace('/(gate)/codigo');
     });
 
     return () => {
       cancelled = true;
     };
-  }, [router, setGrant, setProfile]);
+  }, [attempt, router, setGrant, setProfile]);
+
+  if (failed) {
+    return (
+      <View className="flex-1 items-center justify-center bg-ink px-8">
+        <Text className="text-white font-bold text-center mb-2">Sem ligação ao servidor</Text>
+        <Text className="text-white/60 text-center text-sm mb-6">
+          O acesso deste telemóvel continua guardado. Assim que houver rede, entra na mesma.
+        </Text>
+        <Pressable onPress={retry} className="bg-brand rounded-2xl px-6 py-4">
+          <Text className="text-black font-black">Tentar de novo</Text>
+        </Pressable>
+      </View>
+    );
+  }
 
   return (
     <View className="flex-1 items-center justify-center bg-ink">
