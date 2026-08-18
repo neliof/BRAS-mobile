@@ -16,6 +16,7 @@ import {
   useCreateProduct,
   useChangeProductPrice,
   useDeactivateProduct,
+  useUpdateProduct,
 } from '../../src/hooks/useCatalog';
 import type { ProductCategory } from '../../src/types';
 
@@ -46,6 +47,7 @@ export default function CatalogoModal() {
 
   const createVenue = useCreateVenue();
   const createProduct = useCreateProduct();
+  const updateProduct = useUpdateProduct();
   const changePrice = useChangeProductPrice();
   const deactivate = useDeactivateProduct();
 
@@ -55,6 +57,8 @@ export default function CatalogoModal() {
   const [category, setCategory] = useState<ProductCategory>('cerveja');
   const [price, setPrice] = useState('');
   const [prices, setPrices] = useState<Record<string, string>>({});
+  // Com um id aqui, o formulário de baixo edita esse produto em vez de criar.
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   if (!isAdmin) {
@@ -83,8 +87,37 @@ export default function CatalogoModal() {
       setVenueId(venue.id);
     }, 'Não foi possível criar o bar.');
 
-  const handleCreateProduct = () =>
+  const resetProductForm = () => {
+    setEditingId(null);
+    setProductName('');
+    setUnitSize('');
+    setPrice('');
+    setCategory('cerveja');
+  };
+
+  const handleStartEditing = (productId: string) => {
+    const product = products.find((p) => p.id === productId);
+    if (!product) return;
+    setEditingId(product.id);
+    setProductName(product.name);
+    setUnitSize(product.unit_size);
+    setCategory(product.category);
+    setPrice('');
+  };
+
+  const handleSaveProduct = () =>
     run(async () => {
+      if (editingId) {
+        await updateProduct.mutateAsync({
+          productId: editingId,
+          name: productName,
+          unitSize,
+          category,
+        });
+        resetProductForm();
+        return;
+      }
+
       if (!selectedVenueId) throw new Error('Escolhe um bar primeiro.');
 
       await createProduct.mutateAsync({
@@ -95,10 +128,8 @@ export default function CatalogoModal() {
         price: parsePrice(price),
       });
 
-      setProductName('');
-      setUnitSize('');
-      setPrice('');
-    }, 'Não foi possível criar o produto.');
+      resetProductForm();
+    }, 'Não foi possível guardar o produto.');
 
   const handleChangePrice = (productId: string) =>
     run(async () => {
@@ -118,7 +149,11 @@ export default function CatalogoModal() {
   };
 
   return (
-    <ScrollView className="flex-1 bg-ink">
+    <ScrollView
+      className="flex-1 bg-ink"
+      keyboardShouldPersistTaps="handled"
+      contentContainerStyle={{ paddingBottom: 48 }}
+    >
       <View className="px-4 py-6">
         <Text className="text-white text-2xl font-black mb-6">Bares e produtos</Text>
 
@@ -230,6 +265,12 @@ export default function CatalogoModal() {
                     </Text>
                   </Pressable>
                   <Pressable
+                    onPress={() => handleStartEditing(product.id)}
+                    className="rounded-xl px-3 py-2 bg-white/10 border border-white/20 items-center justify-center"
+                  >
+                    <Text className="text-white text-xs font-semibold">Editar</Text>
+                  </Pressable>
+                  <Pressable
                     onPress={() => handleDeactivate(product.id, product.name)}
                     className="rounded-xl px-3 py-2 bg-red-500/20 items-center justify-center"
                   >
@@ -241,7 +282,9 @@ export default function CatalogoModal() {
           </View>
         )}
 
-        <Text className="text-white/80 text-sm font-semibold mb-3">Novo produto</Text>
+        <Text className="text-white/80 text-sm font-semibold mb-3">
+          {editingId ? 'Editar produto' : 'Novo produto'}
+        </Text>
         <TextInput
           value={productName}
           onChangeText={setProductName}
@@ -256,14 +299,18 @@ export default function CatalogoModal() {
           placeholderTextColor="rgba(255, 255, 255, 0.4)"
           className="bg-white/10 border border-white/20 rounded-2xl px-4 py-3 text-white mb-2"
         />
-        <TextInput
-          value={price}
-          onChangeText={setPrice}
-          placeholder="Preço (ex: 1,50)"
-          placeholderTextColor="rgba(255, 255, 255, 0.4)"
-          keyboardType="decimal-pad"
-          className="bg-white/10 border border-white/20 rounded-2xl px-4 py-3 text-white mb-3"
-        />
+        {/* Em edição o preço não entra aqui: tem o seu próprio fluxo no cartão
+            do produto, porque mexe no histórico imutável. */}
+        {!editingId && (
+          <TextInput
+            value={price}
+            onChangeText={setPrice}
+            placeholder="Preço (ex: 1,50)"
+            placeholderTextColor="rgba(255, 255, 255, 0.4)"
+            keyboardType="decimal-pad"
+            className="bg-white/10 border border-white/20 rounded-2xl px-4 py-3 text-white mb-3"
+          />
+        )}
 
         <View className="flex-row flex-wrap gap-2 mb-4">
           {CATEGORIES.map((option) => (
@@ -288,26 +335,39 @@ export default function CatalogoModal() {
         </View>
 
         <Pressable
-          onPress={handleCreateProduct}
+          onPress={handleSaveProduct}
           disabled={
-            !selectedVenueId ||
             !productName.trim() ||
             !unitSize.trim() ||
-            !(parsePrice(price) > 0) ||
-            createProduct.isPending
+            (!editingId && (!selectedVenueId || !(parsePrice(price) > 0))) ||
+            createProduct.isPending ||
+            updateProduct.isPending
           }
           className={`rounded-2xl px-6 py-4 items-center ${
-            selectedVenueId && productName.trim() && unitSize.trim() && parsePrice(price) > 0
+            productName.trim() &&
+            unitSize.trim() &&
+            (editingId || (selectedVenueId && parsePrice(price) > 0))
               ? 'bg-brand'
               : 'bg-white/10'
           }`}
         >
-          {createProduct.isPending ? (
+          {createProduct.isPending || updateProduct.isPending ? (
             <ActivityIndicator color="rgba(0, 0, 0, 0.6)" />
           ) : (
-            <Text className="text-black font-black text-center">Criar produto</Text>
+            <Text className="text-black font-black text-center">
+              {editingId ? 'Guardar alterações' : 'Criar produto'}
+            </Text>
           )}
         </Pressable>
+
+        {editingId && (
+          <Pressable
+            onPress={resetProductForm}
+            className="rounded-2xl px-6 py-3 items-center mt-2 bg-white/10 border border-white/20"
+          >
+            <Text className="text-white font-semibold text-center">Cancelar edição</Text>
+          </Pressable>
+        )}
 
         {error && (
           <View className="bg-red-500/20 border border-red-500/40 rounded-2xl px-4 py-3 mt-4">

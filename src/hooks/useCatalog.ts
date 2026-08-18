@@ -6,6 +6,7 @@ import {
   deactivateProduct,
   fetchActiveProducts,
   fetchVenues,
+  updateProduct,
 } from '../api/catalog';
 import type { Product } from '../types';
 
@@ -58,6 +59,22 @@ export function useChangeProductPrice() {
 
   return useMutation({
     mutationFn: (input: { productId: string; price: number }) => changeProductPrice(input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+    },
+  });
+}
+
+export function useUpdateProduct() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: {
+      productId: string;
+      name: string;
+      unitSize: string;
+      category: Product['category'];
+    }) => updateProduct(input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
     },

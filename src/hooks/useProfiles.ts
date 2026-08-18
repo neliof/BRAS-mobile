@@ -3,6 +3,7 @@ import {
   createGroupProfile,
   deactivateProfile,
   fetchGroupProfiles,
+  updateGroupProfile,
 } from '../api/profiles';
 
 export function useGroupProfiles(groupId: string) {
@@ -21,6 +22,22 @@ export function useCreateGroupProfile() {
     mutationFn: (input: { groupId: string; name: string; nickname?: string }) =>
       createGroupProfile(input),
     onSuccess: (_profile, input) => {
+      queryClient.invalidateQueries({ queryKey: ['profiles', input.groupId] });
+    },
+  });
+}
+
+export function useUpdateGroupProfile() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: {
+      profileId: string;
+      groupId: string;
+      name: string;
+      nickname?: string;
+    }) => updateGroupProfile(input),
+    onSuccess: (_result, input) => {
       queryClient.invalidateQueries({ queryKey: ['profiles', input.groupId] });
     },
   });

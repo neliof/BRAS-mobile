@@ -115,6 +115,37 @@ export async function createSession(data: {
   };
 }
 
+/**
+ * Apaga uma noite ainda vazia. Só admin — política `sessions_delete_admin`.
+ *
+ * A guarda das rondas é deliberada: `sessions` cascateia para `rounds`,
+ * `consumption` e `payments`, e apagar uma noite com consumo real apagava
+ * contas. Uma noite com rondas fecha-se, não se apaga.
+ */
+export async function deleteSession(sessionId: string): Promise<void> {
+  const { count, error: countError } = await supabase
+    .from('rounds')
+    .select('id', { count: 'exact', head: true })
+    .eq('session_id', sessionId);
+
+  if (countError) throw new Error(countError.message);
+  if ((count ?? 0) > 0) {
+    throw new Error('Esta noite já tem rondas — fecha-a em vez de a apagar.');
+  }
+
+  const { error, count: deleted } = await supabase
+    .from('sessions')
+    .delete({ count: 'exact' })
+    .eq('id', sessionId);
+
+  if (error) throw new Error(error.message);
+  // Sem permissão, o RLS devolve zero linhas sem erro nenhum. Dizer é melhor
+  // do que deixar a noite reaparecer no próximo refetch.
+  if ((deleted ?? 0) === 0) {
+    throw new Error('Só um administrador pode apagar uma noite.');
+  }
+}
+
 export async function updateSessionStatus(
   sessionId: string,
   status: 'active' | 'closed' | 'cancelled',

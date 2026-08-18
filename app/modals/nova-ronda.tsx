@@ -173,7 +173,11 @@ export default function NovaRondaModal() {
     selectedItems.every((item) => item.consumers.length > 0 && item.quantity > 0);
 
   return (
-    <ScrollView className="flex-1 bg-ink">
+    <ScrollView
+      className="flex-1 bg-ink"
+      keyboardShouldPersistTaps="handled"
+      contentContainerStyle={{ paddingBottom: 48 }}
+    >
       <View className="px-4 py-6">
         {/* Header */}
         <Text className="text-white text-2xl font-black mb-6">Nova ronda</Text>

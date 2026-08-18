@@ -77,6 +77,33 @@ export async function createGroupProfile(input: {
 }
 
 /**
+ * Corrige o nome ou a alcunha de um membro. Só admin (`profiles_write_admin`);
+ * para os restantes o RLS não encontra a linha e o update devolve zero linhas
+ * sem erro — daí a verificação explícita.
+ */
+export async function updateGroupProfile(input: {
+  profileId: string;
+  name: string;
+  nickname?: string;
+}): Promise<void> {
+  const name = input.name.trim();
+  if (!name) {
+    throw new Error('O nome é obrigatório.');
+  }
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .update({ name, nickname: input.nickname?.trim() || null })
+    .eq('id', input.profileId)
+    .select('id');
+
+  if (error) throw new Error(error.message);
+  if (!data || data.length === 0) {
+    throw new Error('Só um administrador pode editar membros.');
+  }
+}
+
+/**
  * Desativa um perfil. Apagar levaria atrás consumos e pagamentos por
  * `ON DELETE CASCADE`, e as noites passadas deixariam de fechar as contas.
  */

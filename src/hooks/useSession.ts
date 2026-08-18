@@ -5,6 +5,7 @@ import {
   fetchSessionDetails,
   fetchAllSessions,
   createSession,
+  deleteSession,
   updateSessionStatus,
 } from '../api/sessions';
 import { supabase } from '../api/supabase';
@@ -69,6 +70,21 @@ export function useCreateSession() {
       queryClient.invalidateQueries({
         queryKey: ['sessions', 'all', newSession.group_id],
       });
+    },
+  });
+}
+
+/**
+ * Apagar uma noite vazia (admin). A invalidação cobre o prefixo inteiro:
+ * ativas, todas e detalhes referem-se todas à noite que deixou de existir.
+ */
+export function useDeleteSession() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: deleteSession,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sessions'] });
     },
   });
 }

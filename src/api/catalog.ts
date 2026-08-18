@@ -142,6 +142,36 @@ export async function changeProductPrice(input: {
 }
 
 /**
+ * Corrige nome, tamanho ou categoria de um produto. O preço tem caminho
+ * próprio (`changeProductPrice`) porque mexe no histórico imutável; isto não —
+ * as rondas antigas guardam o `product_name` congelado em `round_items`, logo
+ * renomear um produto não reescreve noite nenhuma.
+ */
+export async function updateProduct(input: {
+  productId: string;
+  name: string;
+  unitSize: string;
+  category: Product['category'];
+}): Promise<void> {
+  const name = input.name.trim();
+  const unitSize = input.unitSize.trim();
+  if (!name || !unitSize) {
+    throw new Error('Nome e tamanho são obrigatórios.');
+  }
+
+  const { data, error } = await supabase
+    .from('products')
+    .update({ name, unit_size: unitSize, category: input.category })
+    .eq('id', input.productId)
+    .select('id');
+
+  if (error) throw new Error(error.message);
+  if (!data || data.length === 0) {
+    throw new Error('Só um administrador pode editar produtos.');
+  }
+}
+
+/**
  * Desativa um produto. Apagar levaria atrás o histórico de preços por
  * `ON DELETE CASCADE` e as rondas antigas perdiam o preço a que foram pagas.
  */

@@ -14,6 +14,18 @@ import { useGroupProfiles } from '../../src/hooks/useProfiles';
 import { useCreateSession } from '../../src/hooks/useSession';
 import { useSession } from '../../src/state/SessionContext';
 
+/** Índice de `Date.getDay()`. Manual em vez de `Intl`: o nome tem de sair
+    igual em qualquer telemóvel, com ou sem dados de localização. */
+const WEEKDAYS = [
+  'Domingo',
+  'Segunda-feira',
+  'Terça-feira',
+  'Quarta-feira',
+  'Quinta-feira',
+  'Sexta-feira',
+  'Sábado',
+];
+
 export default function IniciarNoiteModal() {
   const router = useRouter();
   const { grant, profile, isAdmin } = useSession();
@@ -22,7 +34,8 @@ export default function IniciarNoiteModal() {
   const { data: venues = [], isLoading: venuesLoading } = useVenues();
   const { data: members = [], isLoading: membersLoading } = useGroupProfiles(groupId);
 
-  const [sessionName, setSessionName] = useState('');
+  // A maioria das noites chama-se pelo dia. Vem preenchido e edita-se à vontade.
+  const [sessionName, setSessionName] = useState(() => WEEKDAYS[new Date().getDay()]);
   const [selectedVenueId, setSelectedVenueId] = useState<string | null>(null);
   const [selectedMembers, setSelectedMembers] = useState<Set<string>>(
     profile ? new Set([profile.id]) : new Set(),
@@ -72,7 +85,11 @@ export default function IniciarNoiteModal() {
   const isValid = Boolean(sessionName.trim() && selectedVenueId && selectedMembers.size > 0);
 
   return (
-    <ScrollView className="flex-1 bg-ink">
+    <ScrollView
+      className="flex-1 bg-ink"
+      keyboardShouldPersistTaps="handled"
+      contentContainerStyle={{ paddingBottom: 48 }}
+    >
       <View className="px-4 py-6">
         <Text className="text-white text-2xl font-black mb-6">Iniciar noite</Text>
 

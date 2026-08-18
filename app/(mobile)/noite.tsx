@@ -1,6 +1,11 @@
-import { ScrollView, View, Text, FlatList, Pressable } from 'react-native';
+import { ScrollView, View, Text, FlatList, Pressable, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useSessionDetails, useRealtimeSessions } from '../../src/hooks/useSession';
+import { useSession as useSessionContext } from '../../src/state/SessionContext';
+import {
+  useSessionDetails,
+  useRealtimeSessions,
+  useDeleteSession,
+} from '../../src/hooks/useSession';
 import { useRounds, useRealtimeRounds } from '../../src/hooks/useRounds';
 import { usePayments, useRealtimePayments } from '../../src/hooks/usePayments';
 import { useGroupProfiles } from '../../src/hooks/useProfiles';
@@ -13,6 +18,8 @@ import { computeSessionTotals } from '../../src/domain/debt';
 
 export default function NiteScreen() {
   const router = useRouter();
+  const { isAdmin } = useSessionContext();
+  const deleteSessionMutation = useDeleteSession();
   const { sessionId } = useLocalSearchParams<{ sessionId: string }>();
   const safeSessionId = sessionId ?? '';
 
@@ -53,6 +60,31 @@ export default function NiteScreen() {
       pathname: '/modals/fechar-noite',
       params: { sessionId: safeSessionId },
     });
+  };
+
+  const handleDeleteSession = () => {
+    Alert.alert(
+      'Apagar noite',
+      `"${session.name}" ainda não tem rondas e é apagada de vez. Não dá para desfazer.`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Apagar',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteSessionMutation.mutateAsync(safeSessionId);
+              router.replace('/(mobile)');
+            } catch (cause) {
+              Alert.alert(
+                'Não foi possível apagar',
+                cause instanceof Error ? cause.message : 'Tenta outra vez.',
+              );
+            }
+          },
+        },
+      ],
+    );
   };
 
   const handleAddRound = () => {
@@ -197,6 +229,18 @@ export default function NiteScreen() {
           >
             <Text className="text-white font-black text-center">Fechar noite</Text>
           </Pressable>
+
+          {/* Uma noite aberta por engano sai daqui. Com rondas já não: o
+              cascade levaria consumo e pagamentos atrás — fecha-se. */}
+          {isAdmin && rounds.length === 0 && (
+            <Pressable
+              onPress={handleDeleteSession}
+              disabled={deleteSessionMutation.isPending}
+              className="rounded-2xl px-6 py-4 items-center border border-red-500/40 bg-red-500/10"
+            >
+              <Text className="text-red-300 font-black text-center">Apagar noite</Text>
+            </Pressable>
+          )}
         </View>
       )}
     </ScrollView>

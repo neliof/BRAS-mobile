@@ -126,13 +126,26 @@ export default function AmigosScreen() {
         )}
 
         {isAdmin && (
-          <Pressable
-            onPress={() => handleDeactivate(member.memberId, member.memberName)}
-            disabled={deactivate.isPending}
-            className="mt-3 self-start rounded-lg px-3 py-1 bg-red-500/20"
-          >
-            <Text className="text-red-300 text-xs font-semibold">Desativar</Text>
-          </Pressable>
+          <View className="flex-row gap-2 mt-3">
+            <Pressable
+              onPress={() =>
+                router.push({
+                  pathname: '/modals/novo-membro',
+                  params: { profileId: member.memberId },
+                })
+              }
+              className="rounded-lg px-3 py-1 bg-white/10 border border-white/20"
+            >
+              <Text className="text-white text-xs font-semibold">Editar</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => handleDeactivate(member.memberId, member.memberName)}
+              disabled={deactivate.isPending}
+              className="rounded-lg px-3 py-1 bg-red-500/20"
+            >
+              <Text className="text-red-300 text-xs font-semibold">Desativar</Text>
+            </Pressable>
+          </View>
         )}
       </View>
     );
