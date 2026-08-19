@@ -1,21 +1,20 @@
 import { View, Text, FlatList } from 'react-native';
 import type { Round, RoundItem as RoundItemType } from '../../types';
+import { totalDrinks } from '../../domain/rounds';
 
 interface RoundItemProps {
   round: Round;
+  /** Nome do responsável — o cartão nunca mostra UUIDs. */
+  responsibleName?: string;
 }
 
 function RoundItemProduct({ item }: { item: RoundItemType }): React.ReactElement {
-  const consumedByCount = item.consumptions?.length || 0;
-
   return (
     <View className="flex-row items-center justify-between py-2 px-2 bg-white/5 rounded-lg mb-2">
       <View className="flex-1">
         <Text className="text-white text-sm font-semibold">{item.product_name}</Text>
-        <Text className="text-white/50 text-xs mt-1">
-          {item.quantity}x • {consumedByCount} membros
-        </Text>
       </View>
+      <Text className="text-white/60 text-xs mr-3">{item.quantity}x</Text>
       {/* `total_price` já vem em euros: a conversão de cêntimos acontece
           dentro de src/domain, não aqui. */}
       <Text className="text-brand font-bold text-sm">
@@ -25,15 +24,28 @@ function RoundItemProduct({ item }: { item: RoundItemType }): React.ReactElement
   );
 }
 
-export function RoundItem({ round }: RoundItemProps): React.ReactElement {
-  const totalAmount = round.total_amount;
+export function RoundItem({ round, responsibleName }: RoundItemProps): React.ReactElement {
+  const drinks = totalDrinks(round);
+  const hora = round.created_at
+    ? new Date(round.created_at).toLocaleTimeString('pt-PT', {
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    : '';
 
   return (
     <View className="bg-white/10 rounded-2xl p-4 mb-3 border border-white/20">
-      <View className="flex-row items-center justify-between mb-3">
-        <Text className="text-white font-bold">Ronda {round.round_number}</Text>
-        <Text className="text-brand font-bold text-sm">{totalAmount.toFixed(2)}€</Text>
+      <View className="flex-row items-center justify-between mb-1">
+        <Text className="text-white font-bold">Rodada {round.round_number}</Text>
+        <Text className="text-brand font-bold text-sm">{round.total_amount.toFixed(2)}€</Text>
       </View>
+
+      <Text className="text-white/60 text-xs mb-3">
+        {responsibleName ? `por ${responsibleName}` : ''}
+        {round.member_count ? ` • ${round.member_count} membros na altura` : ''}
+        {` • ${drinks} ${drinks === 1 ? 'bebida' : 'bebidas'}`}
+        {hora ? ` • ${hora}` : ''}
+      </Text>
 
       <FlatList
         data={round.items}
@@ -41,10 +53,6 @@ export function RoundItem({ round }: RoundItemProps): React.ReactElement {
         renderItem={({ item }) => <RoundItemProduct item={item} />}
         scrollEnabled={false}
       />
-
-      <Text className="text-white/60 text-xs mt-2">
-        {round.created_at ? new Date(round.created_at).toLocaleTimeString('pt-PT') : ''}
-      </Text>
     </View>
   );
 }

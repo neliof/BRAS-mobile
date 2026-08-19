@@ -88,11 +88,16 @@ export interface RoundItem {
   consumptions: Consumption[];
 }
 
+/**
+ * Uma rodada: um pedido de bebidas feito por um responsável para os membros
+ * que estavam na noite naquele momento. Cada um paga as suas rodadas — não há
+ * divisão da conta pelos presentes.
+ */
 export interface Round {
   id: string;
   session_id: string;
   round_number: number;
-  requested_by: string; // Profile.id
+  requested_by: string; // Profile.id — o responsável, quem paga esta rodada
   created_by: string; // Profile.id
   created_at: string;
   notes?: string;
@@ -100,6 +105,10 @@ export interface Round {
   cancellation_reason?: string;
   items: RoundItem[];
   total_amount: number;
+  /** Snapshot: quantos membros estavam na noite quando a rodada foi pedida. */
+  member_count?: number | null;
+  /** Snapshot: quem eram esses membros. Nunca é reescrito. */
+  member_ids?: string[] | null;
 }
 
 export type PaymentMethod = 'mbway' | 'dinheiro' | 'cartao' | 'outro';
@@ -131,6 +140,7 @@ export interface Session {
   rating?: number; // 1-5 stars
   quote_of_the_night?: string;
   memory_notes?: string;
+  /** Membros ATUALMENTE na noite (sem `left_at`). Muda ao longo da noite. */
   member_ids: string[];
   rounds: Round[];
   payments: Payment[];

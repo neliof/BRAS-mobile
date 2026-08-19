@@ -15,6 +15,7 @@ import { RoundItem } from '../../src/components/mobile/RoundItem';
 import { MemberDebt } from '../../src/components/mobile/MemberDebt';
 import { PhotoGallery } from '../../src/components/mobile/PhotoGallery';
 import { computeSessionTotals } from '../../src/domain/debt';
+import { nextResponsible, roundsPerMember, totalDrinks } from '../../src/domain/rounds';
 
 export default function NiteScreen() {
   const router = useRouter();
@@ -33,7 +34,7 @@ export default function NiteScreen() {
   // Todos os hooks antes do primeiro return: a noite chega vazia no primeiro
   // render e a ordem dos hooks não pode mudar quando chegar. Uma noite é vivida
   // por várias pessoas ao mesmo tempo — sem estas subscrições, o telemóvel que
-  // não pediu a ronda nunca a via aparecer.
+  // não pediu a rodada nunca a via aparecer.
   useRealtimeRounds(safeSessionId);
   useRealtimePayments(safeSessionId);
   useRealtimePhotos(safeSessionId);
@@ -55,6 +56,16 @@ export default function NiteScreen() {
   };
   const totalsWithPayments = computeSessionTotals(sessionWithPayments);
 
+  const nameOf = (memberId: string) =>
+    profiles.find((p) => p.id === memberId)?.name ?? 'Membro';
+
+  const activeRoundsSorted = rounds
+    .filter((r) => r.status !== 'cancelled')
+    .sort((a, b) => b.round_number - a.round_number);
+  const lastRound = activeRoundsSorted[0];
+  const nextId = nextResponsible(rounds, session.member_ids ?? []);
+  const perMemberCounts = roundsPerMember(rounds, session.member_ids ?? []);
+
   const handleCloseSession = () => {
     router.push({
       pathname: '/modals/fechar-noite',
@@ -65,7 +76,7 @@ export default function NiteScreen() {
   const handleDeleteSession = () => {
     Alert.alert(
       'Apagar noite',
-      `"${session.name}" ainda não tem rondas e é apagada de vez. Não dá para desfazer.`,
+      `"${session.name}" ainda não tem rodadas e é apagada de vez. Não dá para desfazer.`,
       [
         { text: 'Cancelar', style: 'cancel' },
         {
@@ -89,7 +100,14 @@ export default function NiteScreen() {
 
   const handleAddRound = () => {
     router.push({
-      pathname: '/modals/nova-ronda',
+      pathname: '/modals/nova-rodada',
+      params: { sessionId: safeSessionId },
+    });
+  };
+
+  const handleManageMembers = () => {
+    router.push({
+      pathname: '/modals/membros-noite',
       params: { sessionId: safeSessionId },
     });
   };
@@ -137,42 +155,90 @@ export default function NiteScreen() {
         </Pressable>
       </View>
 
+      {/* O ecrã responde primeiro às perguntas da mesa: quem pediu a última,
+          quem deve pedir a seguir, quantos somos agora. As contas vêm depois —
+          cada um paga as suas rodadas, não há divisão. */}
       <View className="px-4 mb-6">
-        <View className="bg-white/10 rounded-2xl p-4 border border-white/20">
-          <View className="flex-row justify-between items-start mb-4">
-            <View>
-              <Text className="text-white/60 text-xs mb-1">Total gasto</Text>
-              <Text className="text-brand text-2xl font-black">
-                {(totalsWithPayments.totalCents / 100).toFixed(2)}€
+        <View className="bg-white/10 rounded-2xl p-4 border border-white/20 mb-2">
+          {lastRound ? (
+            <>
+              <Text className="text-white/60 text-xs mb-1">Última rodada</Text>
+              <Text className="text-white text-xl font-black">
+                {nameOf(lastRound.requested_by)}
               </Text>
-            </View>
-            <View className="items-end">
-              <Text className="text-white/60 text-xs mb-1">Bebidas</Text>
-              <Text className="text-brand text-2xl font-black">
-                {totalsWithPayments.totalDrinks}
+              <Text className="text-white/60 text-xs mt-1">
+                {lastRound.member_count ?? '?'} membros • {totalDrinks(lastRound)}{' '}
+                bebidas •{' '}
+                {new Date(lastRound.created_at).toLocaleTimeString('pt-PT', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
               </Text>
-            </View>
+            </>
+          ) : (
+            <Text className="text-white/60 text-sm">Ainda não há rodadas esta noite.</Text>
+          )}
+        </View>
+
+        <View className="flex-row gap-2">
+          <View className="flex-1 bg-white/10 rounded-2xl p-4 border border-white/20">
+            <Text className="text-white/60 text-xs mb-1">Próximo (sugestão)</Text>
+            <Text className="text-brand text-lg font-black">
+              {nextId ? nameOf(nextId) : '—'}
+            </Text>
           </View>
-          <Text className="text-white/60 text-xs">
-            {session.member_ids.length} membros na noite
-          </Text>
+          <Pressable
+            onPress={handleManageMembers}
+            className="flex-1 bg-white/10 rounded-2xl p-4 border border-white/20"
+          >
+            <Text className="text-white/60 text-xs mb-1">Membros agora</Text>
+            <Text className="text-brand text-lg font-black">
+              {session.member_ids.length}
+            </Text>
+            <Text className="text-white/50 text-[10px] mt-1">Gerir entradas e saídas</Text>
+          </Pressable>
+        </View>
+      </View>
+
+      <View className="px-4 mb-6">
+        <Text className="text-white/60 text-sm mb-3 font-semibold">Rodadas por membro</Text>
+        <View className="flex-row flex-wrap gap-2">
+          {[...perMemberCounts.entries()].map(([memberId, count]) => (
+            <View
+              key={memberId}
+              className={`rounded-full px-3 py-1.5 border ${
+                count > 0 ? 'bg-brand/15 border-brand/50' : 'bg-white/10 border-white/20'
+              }`}
+            >
+              <Text
+                className={`text-xs font-semibold ${count > 0 ? 'text-brand' : 'text-white/60'}`}
+              >
+                {nameOf(memberId)} {count > 0 ? `✓ ${count}` : '⏳'}
+              </Text>
+            </View>
+          ))}
         </View>
       </View>
 
       {rounds && rounds.length > 0 && (
         <View className="px-4 mb-6">
-          <Text className="text-white/60 text-sm mb-3 font-semibold">Rondas</Text>
+          <Text className="text-white/60 text-sm mb-3 font-semibold">Rodadas</Text>
           <FlatList
             data={rounds}
             keyExtractor={(item) => item.id}
-            renderItem={({ item }) => <RoundItem round={item} />}
+            renderItem={({ item }) => (
+              <RoundItem round={item} responsibleName={nameOf(item.requested_by)} />
+            )}
             scrollEnabled={false}
           />
         </View>
       )}
 
       <View className="px-4 mb-6">
-        <Text className="text-white/60 text-sm mb-3 font-semibold">Dívidas</Text>
+        <Text className="text-white/60 text-sm mb-1 font-semibold">Contas</Text>
+        <Text className="text-white/40 text-xs mb-3">
+          Cada um paga as rodadas que pediu — não há divisão da conta.
+        </Text>
         <FlatList
           data={totalsWithPayments.perMember}
           keyExtractor={(item) => item.memberId}
@@ -212,7 +278,7 @@ export default function NiteScreen() {
         )}
       </View>
 
-      {/* Uma noite fechada é histórico: nem se lhe juntam rondas nem se fecha
+      {/* Uma noite fechada é histórico: nem se lhe juntam rodadas nem se fecha
           outra vez. */}
       {session.status === 'active' && (
         <View className="px-4 pb-8 gap-2">
@@ -220,7 +286,7 @@ export default function NiteScreen() {
             onPress={handleAddRound}
             className="bg-brand rounded-2xl px-6 py-4 items-center"
           >
-            <Text className="text-black font-black text-center">Nova ronda</Text>
+            <Text className="text-black font-black text-center">Nova rodada</Text>
           </Pressable>
 
           <Pressable
@@ -230,7 +296,7 @@ export default function NiteScreen() {
             <Text className="text-white font-black text-center">Fechar noite</Text>
           </Pressable>
 
-          {/* Uma noite aberta por engano sai daqui. Com rondas já não: o
+          {/* Uma noite aberta por engano sai daqui. Com rodadas já não: o
               cascade levaria consumo e pagamentos atrás — fecha-se. */}
           {isAdmin && rounds.length === 0 && (
             <Pressable

@@ -3,8 +3,8 @@ import type { Round } from '../types';
 
 /**
  * `items` não é coluna de `rounds`: os artigos são linhas em `round_items`, e os
- * consumos linhas em `consumption`. Com um `select('*')` a lista de rondas vinha
- * sem artigos nenhuns e o cartão da ronda mostrava o total sem nunca dizer o que
+ * consumos linhas em `consumption`. Com um `select('*')` a lista de rodadas vinha
+ * sem artigos nenhuns e o cartão da rodada mostrava o total sem nunca dizer o que
  * se bebeu.
  *
  * A tabela chama-se `consumption` (singular); o alias mantém a forma que os
@@ -41,20 +41,18 @@ export interface CreateRoundItem {
   quantity: number;
   unitPrice: number;
   totalPrice: number;
-  /** Quem bebeu o quê. Sem isto a dívida de toda a gente fica a zero. */
-  consumptions: Array<{
-    memberId: string;
-    quantity: number;
-    amount: number;
-  }>;
 }
 
 /**
- * Grava uma ronda nas três tabelas que a compõem: `rounds`, `round_items` e
- * `consumption`. Não há coluna `items` em `rounds` — os artigos são linhas.
+ * Grava uma rodada em `rounds` e `round_items`. Não há coluna `items` em
+ * `rounds` — os artigos são linhas.
  *
- * Sem transação do lado do cliente: se um dos passos falhar, apaga-se a ronda,
- * e o `ON DELETE CASCADE` leva atrás os artigos e os consumos já inseridos.
+ * A tabela `consumption` deixou de ser escrita: uma rodada não se divide
+ * pelos presentes, o responsável paga o que pediu. As linhas antigas ficam
+ * para o histórico das noites feitas no modelo anterior.
+ *
+ * Sem transação do lado do cliente: se um dos passos falhar, apaga-se a
+ * rodada, e o `ON DELETE CASCADE` leva atrás os artigos já inseridos.
  */
 /** Código do Postgres para violação de restrição única. */
 const UNIQUE_VIOLATION = '23505';
@@ -80,6 +78,8 @@ export async function createRound(
     requestedBy: string;
     createdBy: string;
     notes?: string;
+    /** Snapshot dos membros na noite neste momento. Fica congelado na rodada. */
+    memberIds: string[];
     items: CreateRoundItem[];
   }
 ): Promise<Round> {
@@ -106,6 +106,8 @@ export async function createRound(
         notes: data.notes,
         status: 'active',
         total_amount: totalAmount,
+        member_count: data.memberIds.length,
+        member_ids: data.memberIds,
       })
       .select()
       .single();
@@ -121,7 +123,7 @@ export async function createRound(
 
   if (!round) {
     throw new Error(
-      lastError?.message ?? 'createRound: não foi possível numerar a ronda',
+      lastError?.message ?? 'createRound: não foi possível numerar a rodada',
     );
   }
 
@@ -153,33 +155,13 @@ export async function createRound(
     return rollback('round_items: número de linhas devolvidas não bate com o pedido');
   }
 
-  // A ordem de retorno do insert acompanha a ordem enviada, por isso o índice
-  // liga cada artigo gravado ao rascunho que lhe deu origem.
-  const consumptionRows = data.items.flatMap((item, index) =>
-    item.consumptions.map((consumption) => ({
-      round_item_id: insertedItems[index].id,
-      member_id: consumption.memberId,
-      quantity: consumption.quantity,
-      amount: consumption.amount,
-    })),
-  );
-
-  const { data: insertedConsumptions, error: consumptionError } = await supabase
-    .from('consumption')
-    .insert(consumptionRows)
-    .select();
-
-  if (consumptionError) return rollback(consumptionError.message);
-
   return {
     ...round,
-    items: insertedItems.map((item: { id: string }, index: number) => ({
+    items: insertedItems.map((item: object) => ({
       ...item,
-      consumptions: (insertedConsumptions || []).filter(
-        (c: { round_item_id: string }) => c.round_item_id === item.id,
-      ),
+      consumptions: [],
     })),
-  } as Round;
+  } as unknown as Round;
 }
 
 export async function cancelRound(

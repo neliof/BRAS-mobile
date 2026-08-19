@@ -50,7 +50,7 @@ export function useSyncStatus() {
       const result = await flushQueue(offlineHandlers);
 
       if (result.sent > 0) {
-        // A fila toca em rondas e pagamentos; ambos alimentam a sessão.
+        // A fila toca em rodadas e pagamentos; ambos alimentam a sessão.
         queryClient.invalidateQueries({ queryKey: ['rounds'] });
         queryClient.invalidateQueries({ queryKey: ['payments'] });
         queryClient.invalidateQueries({ queryKey: ['sessions'] });

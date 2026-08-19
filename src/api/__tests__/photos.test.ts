@@ -61,7 +61,7 @@ describe('uploadPhoto', () => {
         sessionId: 's1',
         uploadedBy: 'p1',
         imageUrl: 'g1/s1/a.jpg',
-        caption: 'A ronda das três',
+        caption: 'A rodada das três',
       }),
     ).resolves.toEqual(photo);
 
@@ -71,7 +71,7 @@ describe('uploadPhoto', () => {
         group_id: 'g1',
         session_id: 's1',
         image_url: 'g1/s1/a.jpg',
-        caption: 'A ronda das três',
+        caption: 'A rodada das três',
         tagged_member_ids: [],
       }),
     );

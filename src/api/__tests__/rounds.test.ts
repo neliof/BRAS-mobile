@@ -54,41 +54,27 @@ function bulkInsertChain(result: { data: unknown; error: unknown }) {
 const DRAFT = {
   requestedBy: 'user-1',
   createdBy: 'user-1',
+  memberIds: ['user-1', 'user-2', 'user-3'],
   items: [
     {
       productId: 'prod-1',
       productName: 'Super Bock',
-      quantity: 2,
+      quantity: 3,
       unitPrice: 1.5,
-      totalPrice: 3,
-      consumptions: [
-        { memberId: 'user-1', quantity: 1, amount: 1.5 },
-        { memberId: 'user-2', quantity: 1, amount: 1.5 },
-      ],
+      totalPrice: 4.5,
     },
   ],
 };
 
 describe('createRound', () => {
-  it('grava a ronda, os artigos e os consumos em três tabelas', async () => {
-    const rounds = roundChain({ data: { id: 'round-1', total_amount: 3 }, error: null });
+  it('grava a rodada e os artigos, sem tocar em consumption', async () => {
+    const rounds = roundChain({ data: { id: 'round-1', total_amount: 4.5 }, error: null });
     const items = bulkInsertChain({
       data: [{ id: 'ri-1', round_id: 'round-1', product_name: 'Super Bock' }],
       error: null,
     });
-    const consumption = bulkInsertChain({
-      data: [
-        { id: 'c-1', round_item_id: 'ri-1', member_id: 'user-1', amount: 1.5 },
-        { id: 'c-2', round_item_id: 'ri-1', member_id: 'user-2', amount: 1.5 },
-      ],
-      error: null,
-    });
 
-    from
-      .mockReturnValueOnce(numberChain(2))
-      .mockReturnValueOnce(rounds)
-      .mockReturnValueOnce(items)
-      .mockReturnValueOnce(consumption);
+    from.mockReturnValueOnce(numberChain(2)).mockReturnValueOnce(rounds).mockReturnValueOnce(items);
 
     const result = await createRound('sess-1', DRAFT);
 
@@ -102,7 +88,7 @@ describe('createRound', () => {
       expect.not.objectContaining({ items: expect.anything() }),
     );
     expect(rounds.insert).toHaveBeenCalledWith(
-      expect.objectContaining({ session_id: 'sess-1', total_amount: 3 }),
+      expect.objectContaining({ session_id: 'sess-1', total_amount: 4.5 }),
     );
 
     expect(items.insert).toHaveBeenCalledWith([
@@ -110,21 +96,37 @@ describe('createRound', () => {
         round_id: 'round-1',
         product_id: 'prod-1',
         product_name: 'Super Bock',
-        quantity: 2,
+        quantity: 3,
         unit_price: 1.5,
-        total_price: 3,
+        total_price: 4.5,
       }),
     ]);
 
-    expect(consumption.insert).toHaveBeenCalledWith([
-      { round_item_id: 'ri-1', member_id: 'user-1', quantity: 1, amount: 1.5 },
-      { round_item_id: 'ri-1', member_id: 'user-2', quantity: 1, amount: 1.5 },
-    ]);
-
-    expect(result.items[0].consumptions).toHaveLength(2);
+    // Uma rodada não se divide pelos presentes: `consumption` já não é
+    // escrita, e `from` só é chamado três vezes (número, rodada, artigos).
+    expect(from).toHaveBeenCalledTimes(3);
+    expect(result.items[0].consumptions).toEqual([]);
   });
 
-  it('apaga a ronda se os artigos falharem', async () => {
+  it('congela o snapshot dos membros na rodada', async () => {
+    const rounds = roundChain({ data: { id: 'round-1' }, error: null });
+    const items = bulkInsertChain({ data: [{ id: 'ri-1' }], error: null });
+
+    from.mockReturnValueOnce(numberChain()).mockReturnValueOnce(rounds).mockReturnValueOnce(items);
+
+    await createRound('sess-1', DRAFT);
+
+    // As rodadas antigas têm de continuar a mostrar quantos eram na altura,
+    // mesmo que os membros da noite mudem depois.
+    expect(rounds.insert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        member_count: 3,
+        member_ids: ['user-1', 'user-2', 'user-3'],
+      }),
+    );
+  });
+
+  it('apaga a rodada se os artigos falharem', async () => {
     const rounds = roundChain({ data: { id: 'round-1' }, error: null });
     const items = bulkInsertChain({ data: null, error: { message: 'RLS negado' } });
     const deleteEq = jest.fn(() => Promise.resolve({ error: null }));
@@ -140,37 +142,11 @@ describe('createRound', () => {
     expect(deleteEq).toHaveBeenCalledWith('id', 'round-1');
   });
 
-  it('apaga a ronda se os consumos falharem', async () => {
+  it('numera a partir de 1 numa noite sem rodadas', async () => {
     const rounds = roundChain({ data: { id: 'round-1' }, error: null });
     const items = bulkInsertChain({ data: [{ id: 'ri-1' }], error: null });
-    const consumption = bulkInsertChain({
-      data: null,
-      error: { message: 'membro inexistente' },
-    });
-    const deleteEq = jest.fn(() => Promise.resolve({ error: null }));
-    const del = { delete: jest.fn(() => ({ eq: deleteEq })) };
 
-    from
-      .mockReturnValueOnce(numberChain(1))
-      .mockReturnValueOnce(rounds)
-      .mockReturnValueOnce(items)
-      .mockReturnValueOnce(consumption)
-      .mockReturnValueOnce(del);
-
-    await expect(createRound('sess-1', DRAFT)).rejects.toThrow('membro inexistente');
-    expect(deleteEq).toHaveBeenCalledWith('id', 'round-1');
-  });
-
-  it('numera a partir de 1 numa noite sem rondas', async () => {
-    const rounds = roundChain({ data: { id: 'round-1' }, error: null });
-    const items = bulkInsertChain({ data: [{ id: 'ri-1' }], error: null });
-    const consumption = bulkInsertChain({ data: [], error: null });
-
-    from
-      .mockReturnValueOnce(numberChain())
-      .mockReturnValueOnce(rounds)
-      .mockReturnValueOnce(items)
-      .mockReturnValueOnce(consumption);
+    from.mockReturnValueOnce(numberChain()).mockReturnValueOnce(rounds).mockReturnValueOnce(items);
 
     await createRound('sess-1', DRAFT);
 
@@ -186,15 +162,13 @@ describe('createRound', () => {
     });
     const aceite = roundChain({ data: { id: 'round-2' }, error: null });
     const items = bulkInsertChain({ data: [{ id: 'ri-1' }], error: null });
-    const consumption = bulkInsertChain({ data: [], error: null });
 
     from
       .mockReturnValueOnce(numberChain(2))
       .mockReturnValueOnce(colidido)
       .mockReturnValueOnce(numberChain(3))
       .mockReturnValueOnce(aceite)
-      .mockReturnValueOnce(items)
-      .mockReturnValueOnce(consumption);
+      .mockReturnValueOnce(items);
 
     const result = await createRound('sess-1', DRAFT);
 
@@ -221,7 +195,7 @@ describe('createRound', () => {
 });
 
 describe('fetchRounds', () => {
-  it('traz os artigos e os consumos, que não são colunas de rounds', async () => {
+  it('traz os artigos, que não são colunas de rounds', async () => {
     const round = {
       id: 'round-1',
       session_id: 'sess-1',
@@ -240,9 +214,8 @@ describe('fetchRounds', () => {
 
     const result = await fetchRounds('sess-1');
 
-    // Sem o embed, o cartão da ronda mostrava o total e nenhum produto.
+    // Sem o embed, o cartão da rodada mostrava o total e nenhum produto.
     expect(chain.select).toHaveBeenCalledWith(expect.stringContaining('round_items'));
-    expect(chain.select).toHaveBeenCalledWith(expect.stringContaining('consumption'));
     expect(result[0].items).toHaveLength(1);
   });
 });

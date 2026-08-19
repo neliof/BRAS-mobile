@@ -8,7 +8,7 @@ describe('priceAt', () => {
   });
 
   it('usa o preço em vigor à data, não o preço atual', () => {
-    // Uma ronda de janeiro tem de continuar a custar 1,00 €, mesmo depois
+    // Uma rodada de janeiro tem de continuar a custar 1,00 €, mesmo depois
     // de o preço ter subido para 1,20 € em julho.
     const product = makeProduct({
       current_price: 1.2,

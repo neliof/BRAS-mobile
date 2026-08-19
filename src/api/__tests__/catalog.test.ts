@@ -195,7 +195,7 @@ describe('changeProductPrice', () => {
     await changeProductPrice({ productId: 'p1', price: 2 });
 
     // O histórico é imutável: alterar a linha antiga apagaria o preço a que as
-    // rondas passadas foram pagas.
+    // rodadas passadas foram pagas.
     expect(close.is).toHaveBeenCalledWith('valid_to', null);
     expect(order).toEqual(['fecha', 'abre', 'current_price']);
     expect(current.update).toHaveBeenCalledWith({ current_price: 2 });

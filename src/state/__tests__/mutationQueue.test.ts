@@ -91,7 +91,7 @@ describe('flushQueue', () => {
     await expect(readQueue()).resolves.toEqual([]);
   });
 
-  it('para à primeira falha para não trocar a ordem das rondas', async () => {
+  it('para à primeira falha para não trocar a ordem das rodadas', async () => {
     await enqueue('createRound', { roundNumber: 1 });
     await enqueue('createRound', { roundNumber: 2 });
 

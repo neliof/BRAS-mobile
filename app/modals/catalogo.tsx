@@ -138,7 +138,7 @@ export default function CatalogoModal() {
     }, 'Não foi possível alterar o preço.');
 
   const handleDeactivate = (productId: string, name: string) => {
-    Alert.alert('Desativar produto', `${name} deixa de aparecer nas rondas novas.`, [
+    Alert.alert('Desativar produto', `${name} deixa de aparecer nas rodadas novas.`, [
       { text: 'Cancelar', style: 'cancel' },
       {
         text: 'Desativar',
@@ -220,7 +220,7 @@ export default function CatalogoModal() {
           <View className="mb-6">
             {products.length === 0 && (
               <Text className="text-white/60 text-sm mb-2">
-                Este bar ainda não tem produtos. Sem produtos não há rondas.
+                Este bar ainda não tem produtos. Sem produtos não há rodadas.
               </Text>
             )}
             {products.map((product) => (

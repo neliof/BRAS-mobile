@@ -41,7 +41,7 @@ export default function DefinicoesModal() {
   };
 
   const handleSignOut = () => {
-    // Rondas e pagamentos em fila pertencem à sessão deste grupo. Sem o vínculo
+    // Rodadas e pagamentos em fila pertencem à sessão deste grupo. Sem o vínculo
     // o RLS recusa-os para sempre, e ficariam a tentar até serem descartados.
     const pendingWarning =
       pending > 0

@@ -10,10 +10,10 @@ import type { Session } from '../types';
  * `round.items` é o nome que os tipos usam para `round_items`.
  */
 const SESSION_SELECT =
-  '*, session_members(member_id), rounds(*, items:round_items(*, consumptions:consumption(*))), payments(*), photos(*)';
+  '*, session_members(member_id, left_at), rounds(*, items:round_items(*, consumptions:consumption(*))), payments(*), photos(*)';
 
 interface SessionRow extends Omit<Session, 'member_ids'> {
-  session_members?: { member_id: string }[];
+  session_members?: { member_id: string; left_at?: string | null }[];
 }
 
 function normalizeSession(row: SessionRow): Session {
@@ -21,7 +21,11 @@ function normalizeSession(row: SessionRow): Session {
 
   return {
     ...rest,
-    member_ids: (session_members ?? []).map((m) => m.member_id),
+    // Só quem ESTÁ na noite: quem saiu tem `left_at` e deixa de contar para a
+    // próxima rodada — mas as rodadas antigas guardam o seu próprio snapshot.
+    member_ids: (session_members ?? [])
+      .filter((m) => !m.left_at)
+      .map((m) => m.member_id),
     rounds: rest.rounds ?? [],
     payments: rest.payments ?? [],
     photos: rest.photos ?? [],
@@ -116,11 +120,58 @@ export async function createSession(data: {
 }
 
 /**
+ * Junta um membro à noite (ou volta a juntá-lo, se tinha saído).
+ *
+ * Quem chega às 21:00 passa a contar para a rodada seguinte; as rodadas
+ * anteriores não mudam, porque têm o seu próprio snapshot de membros.
+ */
+export async function addSessionMember(sessionId: string, memberId: string): Promise<void> {
+  const { data: existing, error: findError } = await supabase
+    .from('session_members')
+    .select('id')
+    .eq('session_id', sessionId)
+    .eq('member_id', memberId)
+    .limit(1);
+
+  if (findError) throw new Error(findError.message);
+
+  if (existing && existing.length > 0) {
+    const { error } = await supabase
+      .from('session_members')
+      .update({ left_at: null })
+      .eq('id', existing[0].id);
+    if (error) throw new Error(error.message);
+    return;
+  }
+
+  const { error } = await supabase.from('session_members').insert({
+    session_id: sessionId,
+    member_id: memberId,
+  });
+  if (error) throw new Error(error.message);
+}
+
+/**
+ * Marca a saída de um membro da noite. Não apaga a linha: `left_at` preserva
+ * que esteve cá, e as rodadas em que entrou continuam a mostrá-lo.
+ */
+export async function removeSessionMember(sessionId: string, memberId: string): Promise<void> {
+  const { error } = await supabase
+    .from('session_members')
+    .update({ left_at: new Date().toISOString() })
+    .eq('session_id', sessionId)
+    .eq('member_id', memberId)
+    .is('left_at', null);
+
+  if (error) throw new Error(error.message);
+}
+
+/**
  * Apaga uma noite ainda vazia. Só admin — política `sessions_delete_admin`.
  *
- * A guarda das rondas é deliberada: `sessions` cascateia para `rounds`,
+ * A guarda das rodadas é deliberada: `sessions` cascateia para `rounds`,
  * `consumption` e `payments`, e apagar uma noite com consumo real apagava
- * contas. Uma noite com rondas fecha-se, não se apaga.
+ * contas. Uma noite com rodadas fecha-se, não se apaga.
  */
 export async function deleteSession(sessionId: string): Promise<void> {
   const { count, error: countError } = await supabase
@@ -130,7 +181,7 @@ export async function deleteSession(sessionId: string): Promise<void> {
 
   if (countError) throw new Error(countError.message);
   if ((count ?? 0) > 0) {
-    throw new Error('Esta noite já tem rondas — fecha-a em vez de a apagar.');
+    throw new Error('Esta noite já tem rodadas — fecha-a em vez de a apagar.');
   }
 
   const { error, count: deleted } = await supabase

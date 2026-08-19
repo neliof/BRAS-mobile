@@ -1,11 +1,13 @@
 import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
+  addSessionMember,
   fetchActiveSessions,
   fetchSessionDetails,
   fetchAllSessions,
   createSession,
   deleteSession,
+  removeSessionMember,
   updateSessionStatus,
 } from '../api/sessions';
 import { supabase } from '../api/supabase';
@@ -38,7 +40,7 @@ export function useAllSessions(groupId: string) {
 }
 
 /**
- * Hook para obter detalhes de uma sessão específica, incluindo rondas e pagamentos.
+ * Hook para obter detalhes de uma sessão específica, incluindo rodadas e pagamentos.
  * Cache: 30 segundos
  */
 export function useSessionDetails(sessionId: string) {
@@ -72,6 +74,33 @@ export function useCreateSession() {
       });
     },
   });
+}
+
+/**
+ * Entrada e saída de membros a meio da noite. A invalidação cobre o prefixo
+ * ['sessions'] inteiro: a contagem de membros aparece na lista, nos detalhes
+ * e na referência da próxima rodada.
+ */
+export function useSessionMembers() {
+  const queryClient = useQueryClient();
+
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ['sessions'] });
+  };
+
+  const add = useMutation({
+    mutationFn: ({ sessionId, memberId }: { sessionId: string; memberId: string }) =>
+      addSessionMember(sessionId, memberId),
+    onSuccess: invalidate,
+  });
+
+  const remove = useMutation({
+    mutationFn: ({ sessionId, memberId }: { sessionId: string; memberId: string }) =>
+      removeSessionMember(sessionId, memberId),
+    onSuccess: invalidate,
+  });
+
+  return { add, remove };
 }
 
 /**

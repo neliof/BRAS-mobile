@@ -13,8 +13,8 @@ import { runOrQueue } from '../state/offline';
 import type { Round } from '../types';
 
 /**
- * Hook para obter todas as rondas de uma sessão.
- * Cache: 15 segundos (rondas mudam frequentemente)
+ * Hook para obter todas as rodadas de uma sessão.
+ * Cache: 15 segundos (rodadas mudam frequentemente)
  */
 export function useRounds(sessionId: string) {
   return useQuery({
@@ -26,7 +26,7 @@ export function useRounds(sessionId: string) {
 }
 
 /**
- * Hook para obter apenas as rondas ativas (não canceladas) de uma sessão.
+ * Hook para obter apenas as rodadas ativas (não canceladas) de uma sessão.
  * Cache: 15 segundos
  */
 export function useActiveRounds(sessionId: string) {
@@ -39,7 +39,7 @@ export function useActiveRounds(sessionId: string) {
 }
 
 /**
- * Hook para obter detalhes de uma ronda específica, incluindo items e consumo.
+ * Hook para obter detalhes de uma rodada específica, incluindo items e consumo.
  * Cache: 15 segundos
  */
 export function useRoundDetails(roundId: string) {
@@ -52,10 +52,10 @@ export function useRoundDetails(roundId: string) {
 }
 
 /**
- * Hook para criar uma nova ronda.
+ * Hook para registar uma nova rodada.
  *
- * Sem rede, a ronda vai para a fila e a mutação devolve `null`: o pedido não
- * se perde, mas ainda não há ronda do servidor para pôr no cache.
+ * Sem rede, a rodada vai para a fila e a mutação devolve `null`: o pedido não
+ * se perde, mas ainda não há rodada do servidor para pôr no cache.
  */
 export function useCreateRound() {
   const queryClient = useQueryClient();
@@ -67,6 +67,7 @@ export function useCreateRound() {
         requestedBy: string;
         createdBy: string;
         notes?: string;
+        memberIds: string[];
         items: CreateRoundItem[];
       };
     }) =>
@@ -82,16 +83,20 @@ export function useCreateRound() {
         ]);
       }
 
-      // Invalida rondas ativas para refetch
+      // Invalida rodadas ativas para refetch
       queryClient.invalidateQueries({
         queryKey: ['rounds', 'active', sessionId],
       });
+
+      // A sessão embebe as rodadas: a "última rodada" e o "próximo" leem-nas
+      // de lá, e sem isto só apareciam no refetch seguinte.
+      queryClient.invalidateQueries({ queryKey: ['sessions'] });
     },
   });
 }
 
 /**
- * Hook para cancelar uma ronda.
+ * Hook para cancelar uma rodada.
  * Atualiza cache após cancelar.
  */
 export function useCancelRound() {
@@ -102,10 +107,10 @@ export function useCancelRound() {
       cancelRound(roundId, reason),
 
     onSuccess: (cancelledRound, { roundId }) => {
-      // Atualiza a ronda no cache de detalhes
+      // Atualiza a rodada no cache de detalhes
       queryClient.setQueryData(['rounds', 'details', roundId], cancelledRound);
 
-      // Invalida todas as queries de rondas (melhor refetch de todas)
+      // Invalida todas as queries de rodadas (melhor refetch de todas)
       queryClient.invalidateQueries({
         queryKey: ['rounds'],
       });
@@ -114,7 +119,7 @@ export function useCancelRound() {
 }
 
 /**
- * Hook para subscrições realtime em rondas de uma sessão.
+ * Hook para subscrições realtime em rodadas de uma sessão.
  * Invalida cache quando há mudanças na BD.
  */
 export function useRealtimeRounds(sessionId: string) {
@@ -135,7 +140,7 @@ export function useRealtimeRounds(sessionId: string) {
           filter: `session_id=eq.${sessionId}`,
         },
         () => {
-          // Invalida todas as queries de rondas desta sessão
+          // Invalida todas as queries de rodadas desta sessão
           queryClient.invalidateQueries({
             queryKey: ['rounds', sessionId],
           });

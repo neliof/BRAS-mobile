@@ -17,7 +17,7 @@ export const QUERY_CACHE_MAX_AGE = 7 * 24 * 60 * 60 * 1000;
  * rede dava ecrãs vazios. As escritas offline já estavam tratadas pela fila de
  * mutações; faltava o lado da leitura.
  *
- * O que fica em disco são dados do grupo — nomes, dívidas, rondas. Não é
+ * O que fica em disco são dados do grupo — nomes, dívidas, rodadas. Não é
  * segredo do mesmo nível que o código do grupo (esse continua no SecureStore),
  * mas é histórico do grupo em claro no dispositivo, logo `signOut` tem de o
  * apagar. Ver `clearPersistedCache`.
@@ -25,7 +25,7 @@ export const QUERY_CACHE_MAX_AGE = 7 * 24 * 60 * 60 * 1000;
 export const queryPersister = createAsyncStoragePersister({
   storage: AsyncStorage,
   key: QUERY_CACHE_KEY,
-  // Uma escrita por segundo, no máximo: durante uma ronda o cache muda muitas
+  // Uma escrita por segundo, no máximo: durante uma rodada o cache muda muitas
   // vezes seguidas e gravar em cada mudança bloqueia a interface.
   throttleTime: 1000,
 });

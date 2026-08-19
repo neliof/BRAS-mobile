@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 /**
  * Fila de mutações por enviar.
  *
- * A app é usada num bar, onde a rede falha. Uma ronda registada sem rede não
+ * A app é usada num bar, onde a rede falha. Uma rodada registada sem rede não
  * pode desaparecer: fica aqui até haver ligação.
  *
  * A chave é a mesma que `useSyncStatus` lê para mostrar o estado.
@@ -89,7 +89,7 @@ let flushing = false;
 /**
  * Envia a fila por ordem de entrada.
  *
- * Para à primeira falha em vez de saltar por cima: as rondas são numeradas em
+ * Para à primeira falha em vez de saltar por cima: as rodadas são numeradas em
  * sequência, e enviar a terceira antes da segunda dá uma noite com a ordem
  * trocada. A exceção é uma mutação que esgotou as tentativas — essa é
  * descartada e a fila continua, senão uma linha envenenada bloqueava tudo.

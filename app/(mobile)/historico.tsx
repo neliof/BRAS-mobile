@@ -15,7 +15,7 @@ export default function HistoricoScreen() {
   const closedSessions = allSessions.filter((s) => s.status === 'closed');
 
   const handleSessionPress = (sessionId: string) => {
-    // Não existe ecrã `historico/detalhes`; o ecrã da Noite já mostra rondas e
+    // Não existe ecrã `historico/detalhes`; o ecrã da Noite já mostra rodadas e
     // dívidas, e esconde as ações quando a noite está fechada.
     router.push({
       pathname: '/(mobile)/noite',

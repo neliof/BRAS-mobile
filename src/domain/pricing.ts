@@ -4,7 +4,7 @@ import { toCents, type Cents } from './money';
 /**
  * Preço de um produto no instante `whenIso`.
  *
- * Uma ronda registada no passado tem de manter o preço que estava em vigor
+ * Uma rodada registada no passado tem de manter o preço que estava em vigor
  * nessa data. Usar o preço atual alteraria retroativamente dívidas já
  * calculadas, e possivelmente já pagas.
  *

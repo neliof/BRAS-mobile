@@ -164,6 +164,17 @@ SELECT session_id, round_number, count(*)
 FROM public.rounds GROUP BY 1, 2 HAVING count(*) > 1;
 ```
 
+## 0008 — Rodada: snapshot dos membros
+
+`rounds.member_count` e `rounds.member_ids`. Uma rodada é um pedido feito por um
+responsável para quem está na noite NAQUELE momento; os membros entram e saem
+(`session_members.left_at`), e as rodadas antigas têm de continuar a mostrar
+quantos eram na altura. Backfill com os membros atuais de cada sessão.
+
+Na mesma mudança de conceito, a tabela `consumption` deixou de ser escrita pela
+app: cada membro paga as rodadas que pediu — não há divisão da conta. As linhas
+antigas ficam como histórico.
+
 ## Estado do lado do cliente
 
 O upload de fotos existe desde `5acd7d9`: `src/api/media.ts` carrega para
@@ -176,5 +187,6 @@ Offline: as escritas passam pela fila `@bras_mutation_queue` e o cache de leitur
 é guardado em `@bras_query_cache`. O cache tem dados do grupo em claro no
 dispositivo — sair do grupo apaga os dois, além do código no SecureStore.
 
-Em aberto: as migrações `0003`, `0004`, `0005` e `0006` ainda têm de ser
-aplicadas neste projeto Supabase, por esta ordem.
+Aplicadas no projeto real (2026-08-18): `0001`–`0007`. Em aberto: a migração
+`0008` (snapshot da rodada) tem de ser aplicada antes de instalar o APK com o
+conceito de Rodada — sem ela, o insert de `member_count`/`member_ids` falha.

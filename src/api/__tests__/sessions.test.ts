@@ -87,7 +87,7 @@ describe('sessions API', () => {
   });
 
   describe('fetchSessionDetails', () => {
-    it('obtém os detalhes completos de uma sessão com rondas, pagamentos e fotos', async () => {
+    it('obtém os detalhes completos de uma sessão com rodadas, pagamentos e fotos', async () => {
       const mockSession = {
         id: 'sess-1',
         group_id: 'grp-1',

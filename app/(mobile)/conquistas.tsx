@@ -39,7 +39,7 @@ export default function ConquistasScreen() {
     {
       id: '4',
       name: 'Lenda viva',
-      description: 'Paga a ronda para 5 pessoas',
+      description: 'Paga a rodada para 5 pessoas',
       icon: '👑',
       criteria: 'legend',
       category: 'legend',

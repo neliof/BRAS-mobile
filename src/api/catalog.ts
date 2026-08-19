@@ -13,7 +13,7 @@ export async function fetchVenues(): Promise<Venue[]> {
 
 /**
  * `price_history` não é coluna de `products`: é a tabela `product_prices`. Sem
- * o embed, `priceAt` caía sempre no `current_price` e uma ronda antiga era
+ * o embed, `priceAt` caía sempre no `current_price` e uma rodada antiga era
  * recalculada ao preço de hoje.
  */
 const PRODUCT_SELECT = '*, price_history:product_prices(*)';
@@ -56,7 +56,7 @@ export async function createVenue(input: { name: string; address?: string }): Pr
  *
  * `current_price` é conveniência de leitura; a verdade é `product_prices`, que
  * é imutável. Se a linha de preço falhar, o produto é apagado: um produto sem
- * histórico aparece na lista e mente sobre o preço em qualquer ronda antiga.
+ * histórico aparece na lista e mente sobre o preço em qualquer rodada antiga.
  */
 export async function createProduct(input: {
   venueId: string;
@@ -144,7 +144,7 @@ export async function changeProductPrice(input: {
 /**
  * Corrige nome, tamanho ou categoria de um produto. O preço tem caminho
  * próprio (`changeProductPrice`) porque mexe no histórico imutável; isto não —
- * as rondas antigas guardam o `product_name` congelado em `round_items`, logo
+ * as rodadas antigas guardam o `product_name` congelado em `round_items`, logo
  * renomear um produto não reescreve noite nenhuma.
  */
 export async function updateProduct(input: {
@@ -173,7 +173,7 @@ export async function updateProduct(input: {
 
 /**
  * Desativa um produto. Apagar levaria atrás o histórico de preços por
- * `ON DELETE CASCADE` e as rondas antigas perdiam o preço a que foram pagas.
+ * `ON DELETE CASCADE` e as rodadas antigas perdiam o preço a que foram pagas.
  */
 export async function deactivateProduct(productId: string): Promise<void> {
   const { error } = await supabase
