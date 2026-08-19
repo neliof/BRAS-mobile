@@ -1,18 +1,46 @@
-import { ScrollView, View, Text, FlatList, Pressable } from 'react-native';
+import { ScrollView, View, Text, FlatList, Pressable, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSession } from '../../src/state/SessionContext';
-import { useAllSessions } from '../../src/hooks/useSession';
+import { useAllSessions, useDeleteSession } from '../../src/hooks/useSession';
 import { computeSessionTotals } from '../../src/domain/debt';
 import type { Session } from '../../src/types';
 
 export default function HistoricoScreen() {
   const router = useRouter();
-  const { grant } = useSession();
+  const { grant, isAdmin } = useSession();
   const groupId = grant?.groupId ?? '';
 
   const { data: allSessions = [] } = useAllSessions(groupId);
+  const deleteSessionMutation = useDeleteSession();
 
   const closedSessions = allSessions.filter((s) => s.status === 'closed');
+
+  // Fase de testes: o admin limpa noites encerradas daqui. Apagar leva as
+  // rodadas e as contas dessa noite de vez.
+  const handleDelete = (session: Session) => {
+    const roundCount = (session.rounds ?? []).filter((r) => r.status !== 'cancelled').length;
+    Alert.alert(
+      'Apagar noite',
+      `"${session.name}" e as suas ${roundCount} ${roundCount === 1 ? 'rodada' : 'rodadas'} são apagadas de vez. Não dá para desfazer.`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Apagar',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteSessionMutation.mutateAsync({ sessionId: session.id, force: true });
+            } catch (cause) {
+              Alert.alert(
+                'Não foi possível apagar',
+                cause instanceof Error ? cause.message : 'Tenta outra vez.',
+              );
+            }
+          },
+        },
+      ],
+    );
+  };
 
   const handleSessionPress = (sessionId: string) => {
     // Não existe ecrã `historico/detalhes`; o ecrã da Noite já mostra rodadas e
@@ -71,6 +99,16 @@ export default function HistoricoScreen() {
               "{session.quote_of_the_night}"
             </Text>
           </View>
+        )}
+
+        {isAdmin && (
+          <Pressable
+            onPress={() => handleDelete(session)}
+            disabled={deleteSessionMutation.isPending}
+            className="mt-3 self-start rounded-lg px-3 py-1 bg-red-500/20"
+          >
+            <Text className="text-red-300 text-xs font-semibold">Apagar</Text>
+          </Pressable>
         )}
       </Pressable>
     );

@@ -74,28 +74,33 @@ export default function NiteScreen() {
   };
 
   const handleDeleteSession = () => {
-    Alert.alert(
-      'Apagar noite',
-      `"${session.name}" ainda não tem rodadas e é apagada de vez. Não dá para desfazer.`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Apagar',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await deleteSessionMutation.mutateAsync(safeSessionId);
-              router.replace('/(mobile)');
-            } catch (cause) {
-              Alert.alert(
-                'Não foi possível apagar',
-                cause instanceof Error ? cause.message : 'Tenta outra vez.',
-              );
-            }
-          },
+    const roundCount = rounds.filter((r) => r.status !== 'cancelled').length;
+    const aviso =
+      roundCount > 0
+        ? `"${session.name}" tem ${roundCount} ${roundCount === 1 ? 'rodada' : 'rodadas'} — apagar leva as rodadas e as contas de vez. Não dá para desfazer.`
+        : `"${session.name}" é apagada de vez. Não dá para desfazer.`;
+
+    Alert.alert('Apagar noite', aviso, [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Apagar',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await deleteSessionMutation.mutateAsync({
+              sessionId: safeSessionId,
+              force: roundCount > 0,
+            });
+            router.replace('/(mobile)');
+          } catch (cause) {
+            Alert.alert(
+              'Não foi possível apagar',
+              cause instanceof Error ? cause.message : 'Tenta outra vez.',
+            );
+          }
         },
-      ],
-    );
+      },
+    ]);
   };
 
   const handleAddRound = () => {
@@ -296,9 +301,9 @@ export default function NiteScreen() {
             <Text className="text-white font-black text-center">Fechar noite</Text>
           </Pressable>
 
-          {/* Uma noite aberta por engano sai daqui. Com rodadas já não: o
-              cascade levaria consumo e pagamentos atrás — fecha-se. */}
-          {isAdmin && rounds.length === 0 && (
+          {/* Fase de testes: o admin pode apagar mesmo com rodadas — o aviso
+              diz quantas vão atrás. Fora de testes, fechar é o caminho normal. */}
+          {isAdmin && (
             <Pressable
               onPress={handleDeleteSession}
               disabled={deleteSessionMutation.isPending}

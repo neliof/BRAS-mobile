@@ -12,10 +12,8 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "backgroundColor": "#12161F",
+        "foregroundImage": "./assets/android-icon-foreground.png"
       },
       "predictiveBackGestureEnabled": false,
       "permissions": [
@@ -44,7 +42,8 @@
         "projectId": "79e40c90-ae17-44cc-b56c-56a15b9d7b6a"
       },
       "EXPO_PUBLIC_SUPABASE_URL": "https://mbrwibyvtissmmgcitec.supabase.co",
-      "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_atX_uUytce1XDEr_Qe3PTg_nnOT5FQh"
+      "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_atX_uUytce1XDEr_Qe3PTg_nnOT5FQh",
+      "BUILD_DATE": "2026-08-19"
     }
   }
 }

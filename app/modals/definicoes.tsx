@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { View, Text, ScrollView, Pressable, ActivityIndicator, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
+import Constants from 'expo-constants';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSession } from '../../src/state/SessionContext';
 import { useSyncStatus } from '../../src/hooks/useSyncStatus';
@@ -12,6 +13,9 @@ export default function DefinicoesModal() {
   const { profile, isAdmin, signOut } = useSession();
   const queryClient = useQueryClient();
   const { pendingCount, lastSyncedAt, syncNow } = useSyncStatus();
+  // Escrita no app.json a cada build; o APK não sabe quando foi compilado.
+  const buildDate = (Constants.expoConfig?.extra as Record<string, string> | undefined)
+    ?.BUILD_DATE;
   const [busy, setBusy] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -167,6 +171,18 @@ export default function DefinicoesModal() {
             <Text className="text-red-300 text-sm">{error}</Text>
           </View>
         )}
+
+        <View className="bg-white/5 border border-white/10 rounded-2xl p-4 mt-6">
+          <Text className="text-white/60 text-xs font-semibold mb-2">Acerca da app</Text>
+          <Text className="text-white font-bold">Brás Aquele Bar</Text>
+          <Text className="text-white/60 text-xs mt-1">
+            Versão {Constants.expoConfig?.version ?? '1.0.0'}
+            {buildDate ? ` • compilada a ${buildDate}` : ''}
+          </Text>
+          <Text className="text-white/60 text-xs mt-2">
+            Desenvolvido e mantido por: Nélio Freitas
+          </Text>
+        </View>
       </View>
     </ScrollView>
   );

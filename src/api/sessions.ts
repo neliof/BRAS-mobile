@@ -167,21 +167,27 @@ export async function removeSessionMember(sessionId: string, memberId: string): 
 }
 
 /**
- * Apaga uma noite ainda vazia. Só admin — política `sessions_delete_admin`.
+ * Apaga uma noite. Só admin — política `sessions_delete_admin`.
  *
- * A guarda das rodadas é deliberada: `sessions` cascateia para `rounds`,
- * `consumption` e `payments`, e apagar uma noite com consumo real apagava
- * contas. Uma noite com rodadas fecha-se, não se apaga.
+ * A guarda das rodadas é deliberada: `sessions` cascateia para `rounds` e
+ * `payments`, e apagar uma noite com consumo real apaga contas. `force`
+ * salta a guarda — existe para limpar noites de teste, e o ecrã avisa antes.
+ * (Os ficheiros das fotos ficam órfãos no storage; as linhas caem em cascade.)
  */
-export async function deleteSession(sessionId: string): Promise<void> {
-  const { count, error: countError } = await supabase
-    .from('rounds')
-    .select('id', { count: 'exact', head: true })
-    .eq('session_id', sessionId);
+export async function deleteSession(
+  sessionId: string,
+  options: { force?: boolean } = {},
+): Promise<void> {
+  if (!options.force) {
+    const { count, error: countError } = await supabase
+      .from('rounds')
+      .select('id', { count: 'exact', head: true })
+      .eq('session_id', sessionId);
 
-  if (countError) throw new Error(countError.message);
-  if ((count ?? 0) > 0) {
-    throw new Error('Esta noite já tem rodadas — fecha-a em vez de a apagar.');
+    if (countError) throw new Error(countError.message);
+    if ((count ?? 0) > 0) {
+      throw new Error('Esta noite já tem rodadas — fecha-a em vez de a apagar.');
+    }
   }
 
   const { error, count: deleted } = await supabase
