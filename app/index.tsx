@@ -5,8 +5,10 @@ import { restoreAccess } from '../src/api/access';
 import { fetchGroupProfiles } from '../src/api/profiles';
 import { readCurrentProfileId, readGroupCode } from '../src/api/storage';
 import { useSession } from '../src/state/SessionContext';
+import { useTheme } from '../src/theme/ThemeContext';
 
 export default function Index() {
+  const { theme } = useTheme();
   const router = useRouter();
   const { setGrant, setProfile } = useSession();
   const [failed, setFailed] = useState(false);
@@ -78,21 +80,21 @@ export default function Index() {
 
   if (failed) {
     return (
-      <View className="flex-1 items-center justify-center bg-ink px-8">
-        <Text className="text-white font-bold text-center mb-2">Sem ligação ao servidor</Text>
-        <Text className="text-white/60 text-center text-sm mb-6">
+      <View className="flex-1 items-center justify-center bg-canvas px-8">
+        <Text className="text-fg font-bold text-center mb-2">Sem ligação ao servidor</Text>
+        <Text className="text-fg/60 text-center text-sm mb-6">
           O acesso deste telemóvel continua guardado. Assim que houver rede, entra na mesma.
         </Text>
         <Pressable onPress={retry} className="bg-brand rounded-2xl px-6 py-4">
-          <Text className="text-black font-black">Tentar de novo</Text>
+          <Text className="text-on-brand font-black">Tentar de novo</Text>
         </Pressable>
       </View>
     );
   }
 
   return (
-    <View className="flex-1 items-center justify-center bg-ink">
-      <ActivityIndicator color="#F27D26" />
+    <View className="flex-1 items-center justify-center bg-canvas">
+      <ActivityIndicator color={theme.colors.brand} />
     </View>
   );
 }

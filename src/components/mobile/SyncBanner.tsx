@@ -21,11 +21,11 @@ export function SyncBanner() {
         ? 'A sincronizar...'
         : `${pendingCount} por enviar`;
 
-  const tone = syncStatus === 'syncing' ? 'bg-brand/20' : 'bg-white/10';
+  const tone = syncStatus === 'syncing' ? 'bg-brand/20' : 'bg-fg/10';
 
   return (
-    <View className={`px-4 py-2 ${tone} border-b border-white/10`}>
-      <Text className="text-white/80 text-xs text-center font-semibold">{label}</Text>
+    <View className={`px-4 py-2 ${tone} border-b border-fg/10`}>
+      <Text className="text-fg/80 text-xs text-center font-semibold">{label}</Text>
     </View>
   );
 }

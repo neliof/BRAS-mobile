@@ -1,3 +1,19 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/**
+ * Tema por omissão (Brás Clássico), em canais RGB.
+ *
+ * O ThemeProvider sobrepõe estes valores em runtime com `vars()`. Isto é a
+ * rede: sem uma definição de base, o que renderizasse fora da árvore do
+ * provider resolvia `rgb(var(--color-fg))` para nada e desaparecia do ecrã.
+ * Manter em sincronia com THEMES['bras-classico'] em src/theme/tokens.ts.
+ */
+:root {
+  --color-canvas: 18 22 31;
+  --color-fg: 255 255 255;
+  --color-brand: 242 125 38;
+  --color-on-brand: 0 0 0;
+  --color-danger: 252 165 165;
+}

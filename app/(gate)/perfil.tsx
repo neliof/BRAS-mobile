@@ -5,8 +5,10 @@ import { restoreAccess } from '../../src/api/access';
 import { useGroupProfiles } from '../../src/hooks/useProfiles';
 import { useSession } from '../../src/state/SessionContext';
 import type { Profile } from '../../src/types';
+import { useTheme } from '../../src/theme/ThemeContext';
 
 export default function PerfilScreen() {
+  const { theme } = useTheme();
   const router = useRouter();
   const { grant, isAdmin, setGrant, setProfile } = useSession();
 
@@ -46,8 +48,8 @@ export default function PerfilScreen() {
 
   if (isError) {
     return (
-      <View className="flex-1 items-center justify-center bg-ink px-8">
-        <Text className="text-red-400 text-center">
+      <View className="flex-1 items-center justify-center bg-canvas px-8">
+        <Text className="text-danger text-center">
           Não foi possível carregar os membros.
         </Text>
       </View>
@@ -56,16 +58,16 @@ export default function PerfilScreen() {
 
   if (!grant || isLoading || !profiles) {
     return (
-      <View className="flex-1 items-center justify-center bg-ink">
-        <ActivityIndicator color="#F27D26" />
+      <View className="flex-1 items-center justify-center bg-canvas">
+        <ActivityIndicator color={theme.colors.brand} />
       </View>
     );
   }
 
   return (
-    <View className="flex-1 bg-ink px-6 pt-16">
-      <Text className="text-white text-2xl font-black mb-1">Quem és tu?</Text>
-      <Text className="text-white/50 mb-6">
+    <View className="flex-1 bg-canvas px-6 pt-16">
+      <Text className="text-fg text-2xl font-black mb-1">Quem és tu?</Text>
+      <Text className="text-fg/50 mb-6">
         Escolhe o teu perfil para continuar.
       </Text>
 
@@ -77,7 +79,7 @@ export default function PerfilScreen() {
         // primeiro arranque ficava numa lista vazia sem nada para tocar.
         ListEmptyComponent={
           <View className="items-center">
-            <Text className="text-white/60 text-center mb-4">
+            <Text className="text-fg/60 text-center mb-4">
               Este grupo ainda não tem membros.
             </Text>
             {isAdmin ? (
@@ -85,10 +87,10 @@ export default function PerfilScreen() {
                 onPress={() => router.push('/modals/novo-membro')}
                 className="bg-brand rounded-2xl px-6 py-4"
               >
-                <Text className="text-black font-black">Criar o primeiro membro</Text>
+                <Text className="text-on-brand font-black">Criar o primeiro membro</Text>
               </Pressable>
             ) : (
-              <Text className="text-white/40 text-center text-xs">
+              <Text className="text-fg/40 text-center text-xs">
                 Pede a um administrador do grupo para te criar um perfil.
               </Text>
             )}
@@ -97,11 +99,11 @@ export default function PerfilScreen() {
         renderItem={({ item }) => (
           <Pressable
             onPress={() => choose(item)}
-            className="bg-white/10 rounded-2xl px-4 py-4"
+            className="bg-fg/10 rounded-2xl px-4 py-4"
           >
-            <Text className="text-white font-bold">{item.name}</Text>
+            <Text className="text-fg font-bold">{item.name}</Text>
             {item.nickname && (
-              <Text className="text-white/50 text-xs">{item.nickname}</Text>
+              <Text className="text-fg/50 text-xs">{item.nickname}</Text>
             )}
           </Pressable>
         )}

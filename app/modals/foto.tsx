@@ -20,8 +20,11 @@ import {
   useDeletePhoto,
 } from '../../src/hooks/usePhotos';
 import { usePhotoUrls } from '../../src/hooks/usePhotoUrls';
+import { useTheme } from '../../src/theme/ThemeContext';
+import { withAlpha } from '../../src/theme/tokens';
 
 export default function FotoModal() {
+  const { theme } = useTheme();
   const router = useRouter();
   const params = useLocalSearchParams<{ photoId?: string }>();
   const photoId = params?.photoId;
@@ -44,16 +47,16 @@ export default function FotoModal() {
 
   if (isLoading) {
     return (
-      <View className="flex-1 bg-ink justify-center items-center">
-        <ActivityIndicator color="#F27D26" />
+      <View className="flex-1 bg-canvas justify-center items-center">
+        <ActivityIndicator color={theme.colors.brand} />
       </View>
     );
   }
 
   if (!photo) {
     return (
-      <View className="flex-1 bg-ink justify-center items-center px-6">
-        <Text className="text-red-400 font-semibold text-center">
+      <View className="flex-1 bg-canvas justify-center items-center px-6">
+        <Text className="text-danger font-semibold text-center">
           Esta foto já não existe.
         </Text>
       </View>
@@ -111,28 +114,28 @@ export default function FotoModal() {
   const uri = urls?.[photo.image_url];
 
   return (
-    <ScrollView className="flex-1 bg-ink">
+    <ScrollView className="flex-1 bg-canvas">
       <View className="px-4 py-6">
-        <Text className="text-white text-2xl font-black mb-6">Foto</Text>
+        <Text className="text-fg text-2xl font-black mb-6">Foto</Text>
 
-        <View className="w-full aspect-square rounded-2xl bg-white/5 border border-white/20 overflow-hidden mb-6">
+        <View className="w-full aspect-square rounded-2xl bg-fg/5 border border-fg/20 overflow-hidden mb-6">
           {uri ? (
             <Image source={{ uri }} className="w-full h-full" resizeMode="cover" />
           ) : (
             <View className="flex-1 items-center justify-center">
-              <ActivityIndicator color="#F27D26" />
+              <ActivityIndicator color={theme.colors.brand} />
             </View>
           )}
         </View>
 
-        <Text className="text-white/80 text-sm font-semibold mb-2">Legenda</Text>
+        <Text className="text-fg/80 text-sm font-semibold mb-2">Legenda</Text>
         <TextInput
           value={captionValue}
           onChangeText={setCaption}
           placeholder="Sem legenda"
-          placeholderTextColor="rgba(255, 255, 255, 0.4)"
+          placeholderTextColor={withAlpha(theme.colors.fg, 0.4)}
           maxLength={140}
-          className="bg-white/10 border border-white/20 rounded-2xl px-4 py-4 text-white mb-3"
+          className="bg-fg/10 border border-fg/20 rounded-2xl px-4 py-4 text-fg mb-3"
         />
         {captionChanged && (
           <Pressable
@@ -143,12 +146,12 @@ export default function FotoModal() {
             {updateCaption.isPending ? (
               <ActivityIndicator color="rgba(0, 0, 0, 0.6)" />
             ) : (
-              <Text className="text-black font-black">Guardar legenda</Text>
+              <Text className="text-on-brand font-black">Guardar legenda</Text>
             )}
           </Pressable>
         )}
 
-        <Text className="text-white/80 text-sm font-semibold mb-3 mt-3">Quem está na foto</Text>
+        <Text className="text-fg/80 text-sm font-semibold mb-3 mt-3">Quem está na foto</Text>
         <View className="flex-row flex-wrap gap-2 mb-6">
           {members.map((member) => {
             const isTagged = tagged.includes(member.id);
@@ -158,17 +161,17 @@ export default function FotoModal() {
                 onPress={() => handleToggleTag(member.id)}
                 disabled={addTag.isPending || removeTag.isPending}
                 className={`rounded-full px-4 py-2 border ${
-                  isTagged ? 'bg-brand/20 border-brand' : 'bg-white/10 border-white/20'
+                  isTagged ? 'bg-brand/20 border-brand' : 'bg-fg/10 border-fg/20'
                 }`}
               >
-                <Text className={`font-semibold ${isTagged ? 'text-brand' : 'text-white'}`}>
+                <Text className={`font-semibold ${isTagged ? 'text-brand' : 'text-fg'}`}>
                   {member.name}
                 </Text>
               </Pressable>
             );
           })}
           {members.length === 0 && (
-            <Text className="text-white/60 text-sm">Nenhum membro no grupo.</Text>
+            <Text className="text-fg/60 text-sm">Nenhum membro no grupo.</Text>
           )}
         </View>
 
@@ -176,19 +179,19 @@ export default function FotoModal() {
           <Pressable
             onPress={handleDelete}
             disabled={deletePhoto.isPending}
-            className="rounded-2xl px-6 py-4 items-center border border-red-500/40 bg-red-500/10"
+            className="rounded-2xl px-6 py-4 items-center border border-danger/40 bg-danger/10"
           >
             {deletePhoto.isPending ? (
-              <ActivityIndicator color="#FCA5A5" />
+              <ActivityIndicator color={theme.colors.danger} />
             ) : (
-              <Text className="text-red-300 font-black">Apagar foto</Text>
+              <Text className="text-danger font-black">Apagar foto</Text>
             )}
           </Pressable>
         )}
 
         {error && (
-          <View className="bg-red-500/20 border border-red-500/40 rounded-2xl px-4 py-3 mt-4">
-            <Text className="text-red-300 text-sm">{error}</Text>
+          <View className="bg-danger/20 border border-danger/40 rounded-2xl px-4 py-3 mt-4">
+            <Text className="text-danger text-sm">{error}</Text>
           </View>
         )}
       </View>

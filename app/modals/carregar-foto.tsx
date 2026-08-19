@@ -13,6 +13,8 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSession } from '../../src/state/SessionContext';
 import { useUploadPhoto } from '../../src/hooks/usePhotos';
 import { uploadPhotoImage } from '../../src/api/media';
+import { useTheme } from '../../src/theme/ThemeContext';
+import { withAlpha } from '../../src/theme/tokens';
 
 interface PickedImage {
   uri: string;
@@ -21,6 +23,7 @@ interface PickedImage {
 }
 
 export default function CarregarFotoModal() {
+  const { theme } = useTheme();
   const router = useRouter();
   const params = useLocalSearchParams<{ sessionId?: string }>();
   const sessionId = params?.sessionId;
@@ -121,8 +124,8 @@ export default function CarregarFotoModal() {
 
   if (!groupId || !profile) {
     return (
-      <View className="flex-1 bg-ink justify-center items-center px-6">
-        <Text className="text-red-400 font-semibold text-center">
+      <View className="flex-1 bg-canvas justify-center items-center px-6">
+        <Text className="text-danger font-semibold text-center">
           Escolhe um perfil antes de carregar fotos.
         </Text>
       </View>
@@ -130,9 +133,9 @@ export default function CarregarFotoModal() {
   }
 
   return (
-    <ScrollView className="flex-1 bg-ink">
+    <ScrollView className="flex-1 bg-canvas">
       <View className="px-4 py-6">
-        <Text className="text-white text-2xl font-black mb-6">Carregar foto</Text>
+        <Text className="text-fg text-2xl font-black mb-6">Carregar foto</Text>
 
         {picked ? (
           <Image
@@ -141,8 +144,8 @@ export default function CarregarFotoModal() {
             resizeMode="cover"
           />
         ) : (
-          <View className="w-full aspect-square rounded-2xl bg-white/5 border border-white/20 items-center justify-center mb-4">
-            <Text className="text-white/40 text-sm">Nenhuma foto escolhida</Text>
+          <View className="w-full aspect-square rounded-2xl bg-fg/5 border border-fg/20 items-center justify-center mb-4">
+            <Text className="text-fg/40 text-sm">Nenhuma foto escolhida</Text>
           </View>
         )}
 
@@ -150,41 +153,41 @@ export default function CarregarFotoModal() {
           <Pressable
             onPress={handleTakePhoto}
             disabled={isSending}
-            className="flex-1 bg-white/10 border border-white/20 rounded-2xl px-4 py-4 items-center"
+            className="flex-1 bg-fg/10 border border-fg/20 rounded-2xl px-4 py-4 items-center"
           >
-            <Text className="text-white font-semibold">Tirar foto</Text>
+            <Text className="text-fg font-semibold">Tirar foto</Text>
           </Pressable>
           <Pressable
             onPress={handlePickFromLibrary}
             disabled={isSending}
-            className="flex-1 bg-white/10 border border-white/20 rounded-2xl px-4 py-4 items-center"
+            className="flex-1 bg-fg/10 border border-fg/20 rounded-2xl px-4 py-4 items-center"
           >
-            <Text className="text-white font-semibold">Galeria</Text>
+            <Text className="text-fg font-semibold">Galeria</Text>
           </Pressable>
         </View>
 
-        <Text className="text-white/80 text-sm font-semibold mb-2">Legenda</Text>
+        <Text className="text-fg/80 text-sm font-semibold mb-2">Legenda</Text>
         <TextInput
           value={caption}
           onChangeText={setCaption}
           placeholder="Opcional"
-          placeholderTextColor="rgba(255, 255, 255, 0.4)"
+          placeholderTextColor={withAlpha(theme.colors.fg, 0.4)}
           maxLength={140}
-          className="bg-white/10 border border-white/20 rounded-2xl px-4 py-4 text-white mb-6"
+          className="bg-fg/10 border border-fg/20 rounded-2xl px-4 py-4 text-fg mb-6"
         />
 
         <Pressable
           onPress={handleUpload}
           disabled={!picked || isSending}
           className={`rounded-2xl px-6 py-4 items-center ${
-            picked && !isSending ? 'bg-brand' : 'bg-white/10'
+            picked && !isSending ? 'bg-brand' : 'bg-fg/10'
           }`}
         >
           {isSending ? (
-            <ActivityIndicator color="rgba(255, 255, 255, 0.6)" />
+            <ActivityIndicator color={withAlpha(theme.colors.onBrand, 0.6)} />
           ) : (
             <Text
-              className={`font-black text-center ${picked ? 'text-black' : 'text-white/40'}`}
+              className={`font-black text-center ${picked ? 'text-on-brand' : 'text-fg/40'}`}
             >
               Publicar
             </Text>
@@ -192,8 +195,8 @@ export default function CarregarFotoModal() {
         </Pressable>
 
         {error && (
-          <View className="bg-red-500/20 border border-red-500/40 rounded-2xl px-4 py-3 mt-4">
-            <Text className="text-red-300 text-sm">{error}</Text>
+          <View className="bg-danger/20 border border-danger/40 rounded-2xl px-4 py-3 mt-4">
+            <Text className="text-danger text-sm">{error}</Text>
           </View>
         )}
       </View>

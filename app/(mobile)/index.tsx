@@ -38,36 +38,36 @@ export default function HomeScreen() {
   };
 
   return (
-    <ScrollView className="flex-1 bg-ink">
+    <ScrollView className="flex-1 bg-canvas">
       <View className="px-4 pt-6 pb-4 flex-row items-start justify-between">
         <View className="flex-1 pr-3">
-          <Text className="text-white text-3xl font-black mb-1">
+          <Text className="text-fg text-3xl font-black mb-1">
             Olá, {profile?.name ?? 'amigo'}
           </Text>
-          <Text className="text-white/60 text-sm">Bem-vindo ao BRÁS</Text>
+          <Text className="text-fg/60 text-sm">Bem-vindo ao BRÁS</Text>
         </View>
         {/* O perfil passou a ser restaurado no arranque; sem isto não havia
             forma de voltar ao ecrã de escolha nem de sair do grupo. */}
         <Pressable
           onPress={() => router.push('/modals/definicoes')}
-          className="bg-white/10 rounded-2xl px-4 py-3 border border-white/20"
+          className="bg-fg/10 rounded-2xl px-4 py-3 border border-fg/20"
         >
-          <Text className="text-white font-semibold text-xs">Definições</Text>
+          <Text className="text-fg font-semibold text-xs">Definições</Text>
         </Pressable>
       </View>
 
       <View className="px-4 mb-6 gap-2">
         <View className="flex-row gap-2">
-          <View className="flex-1 bg-white/10 rounded-2xl p-4 border border-white/20">
-            <Text className="text-white/60 text-xs mb-1">Noites ativas</Text>
+          <View className="flex-1 bg-fg/10 rounded-2xl p-4 border border-fg/20">
+            <Text className="text-fg/60 text-xs mb-1">Noites ativas</Text>
             <Text className="text-brand text-2xl font-black">{activeCount}</Text>
           </View>
-          <View className="flex-1 bg-white/10 rounded-2xl p-4 border border-white/20">
-            <Text className="text-white/60 text-xs mb-1">Histórico</Text>
+          <View className="flex-1 bg-fg/10 rounded-2xl p-4 border border-fg/20">
+            <Text className="text-fg/60 text-xs mb-1">Histórico</Text>
             <Text className="text-brand text-2xl font-black">{closedCount}</Text>
           </View>
-          <View className="flex-1 bg-white/10 rounded-2xl p-4 border border-white/20">
-            <Text className="text-white/60 text-xs mb-1">Membros</Text>
+          <View className="flex-1 bg-fg/10 rounded-2xl p-4 border border-fg/20">
+            <Text className="text-fg/60 text-xs mb-1">Membros</Text>
             <Text className="text-brand text-2xl font-black">{totalMembers}</Text>
           </View>
         </View>
@@ -75,7 +75,7 @@ export default function HomeScreen() {
 
       {activeSessions.length > 0 && (
         <View className="px-4 mb-6">
-          <Text className="text-white/60 text-sm mb-3 font-semibold">Noites ativas</Text>
+          <Text className="text-fg/60 text-sm mb-3 font-semibold">Noites ativas</Text>
           <FlatList
             data={activeSessions}
             keyExtractor={(item) => item.id}
@@ -97,7 +97,7 @@ export default function HomeScreen() {
           onPress={handleStartSession}
           className="bg-brand rounded-2xl px-6 py-4 items-center"
         >
-          <Text className="text-black font-black text-center">Iniciar noite</Text>
+          <Text className="text-on-brand font-black text-center">Iniciar noite</Text>
         </Pressable>
       </View>
     </ScrollView>

@@ -14,6 +14,8 @@ import { useSettleMemberDebt } from '../../src/hooks/usePayments';
 import { computeMemberDebt } from '../../src/domain/debt';
 import { toEuros } from '../../src/domain/money';
 import type { PaymentMethod } from '../../src/types';
+import { useTheme } from '../../src/theme/ThemeContext';
+import { withAlpha } from '../../src/theme/tokens';
 
 const PAYMENT_METHODS: { id: PaymentMethod; label: string; icon: string }[] = [
   { id: 'mbway', label: 'MB Way', icon: '📱' },
@@ -23,6 +25,7 @@ const PAYMENT_METHODS: { id: PaymentMethod; label: string; icon: string }[] = [
 ];
 
 export default function PagarDividaModal() {
+  const { theme } = useTheme();
   const router = useRouter();
   const params = useLocalSearchParams<{ sessionId?: string; memberId?: string }>();
   const sessionId = params?.sessionId;
@@ -35,8 +38,8 @@ export default function PagarDividaModal() {
 
   if (!sessionId) {
     return (
-      <View className="flex-1 bg-ink justify-center items-center">
-        <Text className="text-red-400 font-semibold">Erro: Sessão inválida</Text>
+      <View className="flex-1 bg-canvas justify-center items-center">
+        <Text className="text-danger font-semibold">Erro: Sessão inválida</Text>
       </View>
     );
   }
@@ -68,8 +71,8 @@ export default function PagarDividaModal() {
 
   if (isLoading || !session || !memberDebt) {
     return (
-      <View className="flex-1 bg-ink justify-center items-center">
-        <ActivityIndicator color="#F27D26" />
+      <View className="flex-1 bg-canvas justify-center items-center">
+        <ActivityIndicator color={theme.colors.brand} />
       </View>
     );
   }
@@ -77,31 +80,31 @@ export default function PagarDividaModal() {
   const isValid = selectedMethod && !isPaid;
 
   return (
-    <ScrollView className="flex-1 bg-ink">
+    <ScrollView className="flex-1 bg-canvas">
       <View className="px-4 py-6">
         {/* Header */}
-        <Text className="text-white text-2xl font-black mb-6">Pagar dívida</Text>
+        <Text className="text-fg text-2xl font-black mb-6">Pagar dívida</Text>
 
         {/* Dívida atual */}
-        <View className="bg-white/5 border border-white/20 rounded-2xl p-6 mb-6">
-          <Text className="text-white/60 text-sm mb-2">Dívida total</Text>
+        <View className="bg-fg/5 border border-fg/20 rounded-2xl p-6 mb-6">
+          <Text className="text-fg/60 text-sm mb-2">Dívida total</Text>
           <Text className="text-brand text-4xl font-black mb-4">
             {debtAmount.toFixed(2)}€
           </Text>
 
           {/* Breakdown */}
           {memberDebt.breakdown.length > 0 && (
-            <View className="border-t border-white/10 pt-4">
-              <Text className="text-white/60 text-xs mb-3 font-semibold">Detalhes</Text>
+            <View className="border-t border-fg/10 pt-4">
+              <Text className="text-fg/60 text-xs mb-3 font-semibold">Detalhes</Text>
               <FlatList
                 data={memberDebt.breakdown}
                 keyExtractor={(item) => item.productName}
                 renderItem={({ item }) => (
                   <View className="flex-row justify-between items-center mb-2">
-                    <Text className="text-white/80 text-sm">
+                    <Text className="text-fg/80 text-sm">
                       {item.productName} ({item.quantity}x)
                     </Text>
-                    <Text className="text-white font-semibold">
+                    <Text className="text-fg font-semibold">
                       {toEuros(item.amountCents).toFixed(2)}€
                     </Text>
                   </View>
@@ -128,7 +131,7 @@ export default function PagarDividaModal() {
           <>
             {/* Seleção de método de pagamento */}
             <View className="mb-6">
-              <Text className="text-white/80 text-sm font-semibold mb-3">Método de pagamento</Text>
+              <Text className="text-fg/80 text-sm font-semibold mb-3">Método de pagamento</Text>
               <FlatList
                 data={PAYMENT_METHODS}
                 keyExtractor={(item) => item.id}
@@ -138,13 +141,13 @@ export default function PagarDividaModal() {
                     className={`flex-row items-center rounded-2xl px-4 py-4 mb-2 border ${
                       selectedMethod === item.id
                         ? 'bg-brand/20 border-brand'
-                        : 'bg-white/10 border-white/20'
+                        : 'bg-fg/10 border-fg/20'
                     }`}
                   >
                     <Text className="text-2xl mr-3">{item.icon}</Text>
                     <Text
                       className={`font-semibold ${
-                        selectedMethod === item.id ? 'text-brand' : 'text-white'
+                        selectedMethod === item.id ? 'text-brand' : 'text-fg'
                       }`}
                     >
                       {item.label}
@@ -160,15 +163,15 @@ export default function PagarDividaModal() {
               onPress={handleConfirmPayment}
               disabled={!isValid || settleDebtMutation.isPending}
               className={`rounded-2xl px-6 py-4 items-center ${
-                isValid && !settleDebtMutation.isPending ? 'bg-brand' : 'bg-white/10'
+                isValid && !settleDebtMutation.isPending ? 'bg-brand' : 'bg-fg/10'
               }`}
             >
               {settleDebtMutation.isPending ? (
-                <ActivityIndicator color="rgba(255, 255, 255, 0.6)" />
+                <ActivityIndicator color={withAlpha(theme.colors.onBrand, 0.6)} />
               ) : (
                 <Text
                   className={`font-black text-center ${
-                    isValid ? 'text-black' : 'text-white/40'
+                    isValid ? 'text-on-brand' : 'text-fg/40'
                   }`}
                 >
                   Confirmar pagamento
@@ -177,8 +180,8 @@ export default function PagarDividaModal() {
             </Pressable>
 
             {settleDebtMutation.isError && (
-              <View className="bg-red-500/20 border border-red-500/40 rounded-2xl px-4 py-3 mt-4">
-                <Text className="text-red-300 text-sm">
+              <View className="bg-danger/20 border border-danger/40 rounded-2xl px-4 py-3 mt-4">
+                <Text className="text-danger text-sm">
                   Erro ao registar o pagamento. Tenta novamente.
                 </Text>
               </View>

@@ -69,12 +69,12 @@ export default function HistoricoScreen() {
       <Pressable
         key={session.id}
         onPress={() => handleSessionPress(session.id)}
-        className="bg-white/10 rounded-2xl p-4 mb-3 border border-white/20"
+        className="bg-fg/10 rounded-2xl p-4 mb-3 border border-fg/20"
       >
         <View className="flex-row justify-between items-start mb-2">
           <View className="flex-1">
-            <Text className="text-white font-bold text-base">{session.name}</Text>
-            <Text className="text-white/60 text-xs mt-1">
+            <Text className="text-fg font-bold text-base">{session.name}</Text>
+            <Text className="text-fg/60 text-xs mt-1">
               {dateStr} às {timeStr}
             </Text>
           </View>
@@ -83,19 +83,19 @@ export default function HistoricoScreen() {
           </View>
         </View>
 
-        <View className="flex-row justify-between items-center pt-2 border-t border-white/10">
-          <Text className="text-white/60 text-xs">
+        <View className="flex-row justify-between items-center pt-2 border-t border-fg/10">
+          <Text className="text-fg/60 text-xs">
             {session.member_ids.length} membros
           </Text>
-          <Text className="text-white/60 text-xs">{totalDrinks} bebidas</Text>
+          <Text className="text-fg/60 text-xs">{totalDrinks} bebidas</Text>
           {session.rating && (
             <Text className="text-brand text-xs font-bold">★ {session.rating}</Text>
           )}
         </View>
 
         {session.quote_of_the_night && (
-          <View className="mt-3 bg-white/5 rounded-lg p-2 border-l-2 border-brand">
-            <Text className="text-white/60 text-xs italic">
+          <View className="mt-3 bg-fg/5 rounded-lg p-2 border-l-2 border-brand">
+            <Text className="text-fg/60 text-xs italic">
               "{session.quote_of_the_night}"
             </Text>
           </View>
@@ -105,9 +105,9 @@ export default function HistoricoScreen() {
           <Pressable
             onPress={() => handleDelete(session)}
             disabled={deleteSessionMutation.isPending}
-            className="mt-3 self-start rounded-lg px-3 py-1 bg-red-500/20"
+            className="mt-3 self-start rounded-lg px-3 py-1 bg-danger/20"
           >
-            <Text className="text-red-300 text-xs font-semibold">Apagar</Text>
+            <Text className="text-danger text-xs font-semibold">Apagar</Text>
           </Pressable>
         )}
       </Pressable>
@@ -115,10 +115,10 @@ export default function HistoricoScreen() {
   };
 
   return (
-    <ScrollView className="flex-1 bg-ink">
+    <ScrollView className="flex-1 bg-canvas">
       <View className="px-4 pt-6 pb-4">
-        <Text className="text-white text-3xl font-black mb-1">Histórico</Text>
-        <Text className="text-white/60 text-sm">
+        <Text className="text-fg text-3xl font-black mb-1">Histórico</Text>
+        <Text className="text-fg/60 text-sm">
           {closedSessions.length} noites encerradas
         </Text>
       </View>
@@ -126,7 +126,7 @@ export default function HistoricoScreen() {
       <View className="px-4 pb-8">
         {closedSessions.length === 0 ? (
           <View className="items-center justify-center py-12">
-            <Text className="text-white/60 text-center">
+            <Text className="text-fg/60 text-center">
               Nenhuma noite no histórico ainda
             </Text>
           </View>

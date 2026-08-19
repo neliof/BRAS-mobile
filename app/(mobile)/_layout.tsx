@@ -11,7 +11,7 @@ import { Atalhos } from '../../src/components/mobile/Atalhos';
  */
 export default function MobileLayout() {
   return (
-    <View className="flex-1 bg-ink">
+    <View className="flex-1 bg-canvas">
       <Atalhos />
       <Tabs
         screenOptions={{

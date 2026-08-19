@@ -5,8 +5,11 @@ import { useSession } from '../../src/state/SessionContext';
 import { useAllSessions } from '../../src/hooks/useSession';
 import { useGroupProfiles, useDeactivateProfile } from '../../src/hooks/useProfiles';
 import { computeMemberDebt } from '../../src/domain/debt';
+import { useTheme } from '../../src/theme/ThemeContext';
+import { withAlpha } from '../../src/theme/tokens';
 
 export default function AmigosScreen() {
+  const { theme } = useTheme();
   const router = useRouter();
   const { grant, isAdmin } = useSession();
   const groupId = grant?.groupId ?? '';
@@ -102,24 +105,24 @@ export default function AmigosScreen() {
     const pendingDebt = member.pendingDebt / 100;
 
     return (
-      <View key={member.memberId} className="bg-white/10 rounded-2xl p-4 mb-3 border border-white/20">
+      <View key={member.memberId} className="bg-fg/10 rounded-2xl p-4 mb-3 border border-fg/20">
         <View className="flex-row justify-between items-start mb-2">
           <View className="flex-1">
-            <Text className="text-white font-bold">{member.memberName}</Text>
-            <Text className="text-white/60 text-xs mt-1">
+            <Text className="text-fg font-bold">{member.memberName}</Text>
+            <Text className="text-fg/60 text-xs mt-1">
               {member.sessionsCount} noites
             </Text>
           </View>
           <View className="items-end">
-            <Text className="text-white/60 text-xs mb-1">Gasto</Text>
+            <Text className="text-fg/60 text-xs mb-1">Gasto</Text>
             <Text className="text-brand font-bold text-sm">{totalSpent.toFixed(2)}€</Text>
           </View>
         </View>
 
         {pendingDebt > 0 && (
-          <View className="border-t border-white/10 pt-2 mt-2">
+          <View className="border-t border-fg/10 pt-2 mt-2">
             <View className="flex-row justify-between">
-              <Text className="text-white/60 text-xs">Dívida pendente</Text>
+              <Text className="text-fg/60 text-xs">Dívida pendente</Text>
               <Text className="text-brand text-xs font-bold">{pendingDebt.toFixed(2)}€</Text>
             </View>
           </View>
@@ -134,16 +137,16 @@ export default function AmigosScreen() {
                   params: { profileId: member.memberId },
                 })
               }
-              className="rounded-lg px-3 py-1 bg-white/10 border border-white/20"
+              className="rounded-lg px-3 py-1 bg-fg/10 border border-fg/20"
             >
-              <Text className="text-white text-xs font-semibold">Editar</Text>
+              <Text className="text-fg text-xs font-semibold">Editar</Text>
             </Pressable>
             <Pressable
               onPress={() => handleDeactivate(member.memberId, member.memberName)}
               disabled={deactivate.isPending}
-              className="rounded-lg px-3 py-1 bg-red-500/20"
+              className="rounded-lg px-3 py-1 bg-danger/20"
             >
-              <Text className="text-red-300 text-xs font-semibold">Desativar</Text>
+              <Text className="text-danger text-xs font-semibold">Desativar</Text>
             </Pressable>
           </View>
         )}
@@ -152,16 +155,16 @@ export default function AmigosScreen() {
   };
 
   return (
-    <ScrollView className="flex-1 bg-ink">
+    <ScrollView className="flex-1 bg-canvas">
       <View className="px-4 pt-6 pb-4">
-        <Text className="text-white text-3xl font-black mb-4">Amigos</Text>
+        <Text className="text-fg text-3xl font-black mb-4">Amigos</Text>
 
         <TextInput
           placeholder="Procurar membro..."
-          placeholderTextColor="#ffffff40"
+          placeholderTextColor={withAlpha(theme.colors.fg, 0.25)}
           value={searchText}
           onChangeText={setSearchText}
-          className="bg-white/10 text-white rounded-2xl px-4 py-3 border border-white/20 mb-4"
+          className="bg-fg/10 text-fg rounded-2xl px-4 py-3 border border-fg/20 mb-4"
         />
 
         {isAdmin && (
@@ -169,7 +172,7 @@ export default function AmigosScreen() {
             onPress={() => router.push('/modals/novo-membro')}
             className="bg-brand rounded-2xl px-6 py-4 items-center"
           >
-            <Text className="text-black font-black text-center">Adicionar membro</Text>
+            <Text className="text-on-brand font-black text-center">Adicionar membro</Text>
           </Pressable>
         )}
       </View>
@@ -177,7 +180,7 @@ export default function AmigosScreen() {
       <View className="px-4 pb-8">
         {filteredMembers.length === 0 ? (
           <View className="items-center justify-center py-8">
-            <Text className="text-white/60 text-center">
+            <Text className="text-fg/60 text-center">
               {searchText ? 'Nenhum membro encontrado' : 'Nenhum membro no grupo'}
             </Text>
           </View>

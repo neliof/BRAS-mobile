@@ -26,7 +26,7 @@ function PhotoItem({ photo, uri, onPress }: PhotoItemProps): React.ReactElement 
   };
 
   return (
-    <Pressable onPress={handlePress} className="flex-1 aspect-square m-1 bg-white/10 rounded-lg overflow-hidden">
+    <Pressable onPress={handlePress} className="flex-1 aspect-square m-1 bg-fg/10 rounded-lg overflow-hidden">
       {uri ? (
         <Image source={{ uri }} className="w-full h-full" resizeMode="cover" />
       ) : null}
@@ -42,7 +42,7 @@ export function PhotoGallery({
 }: PhotoGalleryProps): React.ReactElement {
   if (photos.length === 0) {
     return (
-      <View className="bg-white/10 rounded-2xl p-4 border border-white/20 items-center justify-center py-8">
+      <View className="bg-fg/10 rounded-2xl p-4 border border-fg/20 items-center justify-center py-8">
         {/* Empty state */}
       </View>
     );

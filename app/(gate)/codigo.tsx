@@ -5,8 +5,11 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { redeemCode, AccessError } from '../../src/api/access';
+import { useTheme } from '../../src/theme/ThemeContext';
+import { withAlpha } from '../../src/theme/tokens';
 
 export default function CodigoScreen() {
+  const { theme } = useTheme();
   const router = useRouter();
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
@@ -31,14 +34,14 @@ export default function CodigoScreen() {
 
   return (
     <KeyboardAvoidingView
-      className="flex-1 bg-ink"
+      className="flex-1 bg-canvas"
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <View className="flex-1 justify-center px-8">
         <Text className="text-brand text-3xl font-black mb-2">
           Brás Aquele Bar
         </Text>
-        <Text className="text-white/60 mb-8">
+        <Text className="text-fg/60 mb-8">
           Introduz o código do grupo para entrar.
         </Text>
 
@@ -46,27 +49,27 @@ export default function CodigoScreen() {
           value={code}
           onChangeText={setCode}
           placeholder="Código do grupo"
-          placeholderTextColor="#ffffff55"
+          placeholderTextColor={withAlpha(theme.colors.fg, 0.33)}
           autoCapitalize="none"
           autoCorrect={false}
           secureTextEntry
           editable={!busy}
-          className="bg-white/10 text-white rounded-2xl px-4 py-4 mb-4"
+          className="bg-fg/10 text-fg rounded-2xl px-4 py-4 mb-4"
         />
 
-        {error && <Text className="text-red-400 mb-4">{error}</Text>}
+        {error && <Text className="text-danger mb-4">{error}</Text>}
 
         <Pressable
           onPress={submit}
           disabled={busy || code.trim().length < 8}
           className={`rounded-2xl py-4 items-center ${
-            busy || code.trim().length < 8 ? 'bg-white/10' : 'bg-brand'
+            busy || code.trim().length < 8 ? 'bg-fg/10' : 'bg-brand'
           }`}
         >
           {busy ? (
             <ActivityIndicator color="#000" />
           ) : (
-            <Text className="text-black font-black">Entrar</Text>
+            <Text className="text-on-brand font-black">Entrar</Text>
           )}
         </Pressable>
       </View>

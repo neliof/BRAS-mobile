@@ -42,8 +42,8 @@ export default function NiteScreen() {
 
   if (!session) {
     return (
-      <View className="flex-1 bg-ink items-center justify-center">
-        <Text className="text-white text-center px-4">
+      <View className="flex-1 bg-canvas items-center justify-center">
+        <Text className="text-fg text-center px-4">
           {sessionLoading ? 'A carregar...' : 'Nenhuma noite ativa'}
         </Text>
       </View>
@@ -146,17 +146,17 @@ export default function NiteScreen() {
   };
 
   return (
-    <ScrollView className="flex-1 bg-ink">
+    <ScrollView className="flex-1 bg-canvas">
       <View className="px-4 pt-6 pb-4 flex-row items-start justify-between">
         <View className="flex-1 pr-3">
-          <Text className="text-white text-3xl font-black mb-1">{session.name}</Text>
-          <Text className="text-white/60 text-sm">{session.code}</Text>
+          <Text className="text-fg text-3xl font-black mb-1">{session.name}</Text>
+          <Text className="text-fg/60 text-sm">{session.code}</Text>
         </View>
         <Pressable
           onPress={handleShowQrCode}
-          className="bg-white/10 rounded-2xl px-4 py-3 border border-white/20"
+          className="bg-fg/10 rounded-2xl px-4 py-3 border border-fg/20"
         >
-          <Text className="text-white font-semibold text-xs">Partilhar</Text>
+          <Text className="text-fg font-semibold text-xs">Partilhar</Text>
         </Pressable>
       </View>
 
@@ -164,14 +164,14 @@ export default function NiteScreen() {
           quem deve pedir a seguir, quantos somos agora. As contas vêm depois —
           cada um paga as suas rodadas, não há divisão. */}
       <View className="px-4 mb-6">
-        <View className="bg-white/10 rounded-2xl p-4 border border-white/20 mb-2">
+        <View className="bg-fg/10 rounded-2xl p-4 border border-fg/20 mb-2">
           {lastRound ? (
             <>
-              <Text className="text-white/60 text-xs mb-1">Última rodada</Text>
-              <Text className="text-white text-xl font-black">
+              <Text className="text-fg/60 text-xs mb-1">Última rodada</Text>
+              <Text className="text-fg text-xl font-black">
                 {nameOf(lastRound.requested_by)}
               </Text>
-              <Text className="text-white/60 text-xs mt-1">
+              <Text className="text-fg/60 text-xs mt-1">
                 {lastRound.member_count ?? '?'} membros • {totalDrinks(lastRound)}{' '}
                 bebidas •{' '}
                 {new Date(lastRound.created_at).toLocaleTimeString('pt-PT', {
@@ -181,42 +181,42 @@ export default function NiteScreen() {
               </Text>
             </>
           ) : (
-            <Text className="text-white/60 text-sm">Ainda não há rodadas esta noite.</Text>
+            <Text className="text-fg/60 text-sm">Ainda não há rodadas esta noite.</Text>
           )}
         </View>
 
         <View className="flex-row gap-2">
-          <View className="flex-1 bg-white/10 rounded-2xl p-4 border border-white/20">
-            <Text className="text-white/60 text-xs mb-1">Próximo (sugestão)</Text>
+          <View className="flex-1 bg-fg/10 rounded-2xl p-4 border border-fg/20">
+            <Text className="text-fg/60 text-xs mb-1">Próximo (sugestão)</Text>
             <Text className="text-brand text-lg font-black">
               {nextId ? nameOf(nextId) : '—'}
             </Text>
           </View>
           <Pressable
             onPress={handleManageMembers}
-            className="flex-1 bg-white/10 rounded-2xl p-4 border border-white/20"
+            className="flex-1 bg-fg/10 rounded-2xl p-4 border border-fg/20"
           >
-            <Text className="text-white/60 text-xs mb-1">Membros agora</Text>
+            <Text className="text-fg/60 text-xs mb-1">Membros agora</Text>
             <Text className="text-brand text-lg font-black">
               {session.member_ids.length}
             </Text>
-            <Text className="text-white/50 text-[10px] mt-1">Gerir entradas e saídas</Text>
+            <Text className="text-fg/50 text-[10px] mt-1">Gerir entradas e saídas</Text>
           </Pressable>
         </View>
       </View>
 
       <View className="px-4 mb-6">
-        <Text className="text-white/60 text-sm mb-3 font-semibold">Rodadas por membro</Text>
+        <Text className="text-fg/60 text-sm mb-3 font-semibold">Rodadas por membro</Text>
         <View className="flex-row flex-wrap gap-2">
           {[...perMemberCounts.entries()].map(([memberId, count]) => (
             <View
               key={memberId}
               className={`rounded-full px-3 py-1.5 border ${
-                count > 0 ? 'bg-brand/15 border-brand/50' : 'bg-white/10 border-white/20'
+                count > 0 ? 'bg-brand/15 border-brand/50' : 'bg-fg/10 border-fg/20'
               }`}
             >
               <Text
-                className={`text-xs font-semibold ${count > 0 ? 'text-brand' : 'text-white/60'}`}
+                className={`text-xs font-semibold ${count > 0 ? 'text-brand' : 'text-fg/60'}`}
               >
                 {nameOf(memberId)} {count > 0 ? `✓ ${count}` : '⏳'}
               </Text>
@@ -227,7 +227,7 @@ export default function NiteScreen() {
 
       {rounds && rounds.length > 0 && (
         <View className="px-4 mb-6">
-          <Text className="text-white/60 text-sm mb-3 font-semibold">Rodadas</Text>
+          <Text className="text-fg/60 text-sm mb-3 font-semibold">Rodadas</Text>
           <FlatList
             data={rounds}
             keyExtractor={(item) => item.id}
@@ -240,8 +240,8 @@ export default function NiteScreen() {
       )}
 
       <View className="px-4 mb-6">
-        <Text className="text-white/60 text-sm mb-1 font-semibold">Contas</Text>
-        <Text className="text-white/40 text-xs mb-3">
+        <Text className="text-fg/60 text-sm mb-1 font-semibold">Contas</Text>
+        <Text className="text-fg/40 text-xs mb-3">
           Cada um paga as rodadas que pediu — não há divisão da conta.
         </Text>
         <FlatList
@@ -260,19 +260,19 @@ export default function NiteScreen() {
 
       <View className="px-4 mb-6">
         <View className="flex-row items-center justify-between mb-3">
-          <Text className="text-white/60 text-sm font-semibold">Fotos da noite</Text>
+          <Text className="text-fg/60 text-sm font-semibold">Fotos da noite</Text>
           {session.status === 'active' && (
             <Pressable
               onPress={handleAddPhoto}
-              className="bg-white/10 rounded-2xl px-4 py-2 border border-white/20"
+              className="bg-fg/10 rounded-2xl px-4 py-2 border border-fg/20"
             >
-              <Text className="text-white font-semibold text-xs">Adicionar</Text>
+              <Text className="text-fg font-semibold text-xs">Adicionar</Text>
             </Pressable>
           )}
         </View>
 
         {photos.length === 0 ? (
-          <Text className="text-white/40 text-sm">Ainda não há fotos desta noite.</Text>
+          <Text className="text-fg/40 text-sm">Ainda não há fotos desta noite.</Text>
         ) : (
           <PhotoGallery
             photos={photos}
@@ -291,14 +291,14 @@ export default function NiteScreen() {
             onPress={handleAddRound}
             className="bg-brand rounded-2xl px-6 py-4 items-center"
           >
-            <Text className="text-black font-black text-center">Nova rodada</Text>
+            <Text className="text-on-brand font-black text-center">Nova rodada</Text>
           </Pressable>
 
           <Pressable
             onPress={handleCloseSession}
-            className="bg-white/10 rounded-2xl px-6 py-4 items-center border border-white/20"
+            className="bg-fg/10 rounded-2xl px-6 py-4 items-center border border-fg/20"
           >
-            <Text className="text-white font-black text-center">Fechar noite</Text>
+            <Text className="text-fg font-black text-center">Fechar noite</Text>
           </Pressable>
 
           {/* Fase de testes: o admin pode apagar mesmo com rodadas — o aviso
@@ -307,9 +307,9 @@ export default function NiteScreen() {
             <Pressable
               onPress={handleDeleteSession}
               disabled={deleteSessionMutation.isPending}
-              className="rounded-2xl px-6 py-4 items-center border border-red-500/40 bg-red-500/10"
+              className="rounded-2xl px-6 py-4 items-center border border-danger/40 bg-danger/10"
             >
-              <Text className="text-red-300 font-black text-center">Apagar noite</Text>
+              <Text className="text-danger font-black text-center">Apagar noite</Text>
             </Pressable>
           )}
         </View>

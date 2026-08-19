@@ -68,10 +68,10 @@ export default function MemoriasScreen() {
     router.push({ pathname: '/modals/foto', params: { photoId: photo.id } });
 
   return (
-    <ScrollView className="flex-1 bg-ink">
+    <ScrollView className="flex-1 bg-canvas">
       <View className="px-4 pt-6 pb-4">
-        <Text className="text-white text-3xl font-black mb-1">Memórias</Text>
-        <Text className="text-white/60 text-sm">
+        <Text className="text-fg text-3xl font-black mb-1">Memórias</Text>
+        <Text className="text-fg/60 text-sm">
           {photos.length} fotos no grupo
         </Text>
       </View>
@@ -81,18 +81,18 @@ export default function MemoriasScreen() {
           onPress={handleUploadPhoto}
           className="bg-brand rounded-2xl px-6 py-4 items-center"
         >
-          <Text className="text-black font-black text-center">Carregar foto</Text>
+          <Text className="text-on-brand font-black text-center">Carregar foto</Text>
         </Pressable>
       </View>
 
       <View className="px-4 pb-8">
         {isLoading ? (
           <View className="items-center justify-center py-12">
-            <Text className="text-white/60">A carregar fotos...</Text>
+            <Text className="text-fg/60">A carregar fotos...</Text>
           </View>
         ) : photos.length === 0 ? (
           <View className="items-center justify-center py-12">
-            <Text className="text-white/60 text-center">
+            <Text className="text-fg/60 text-center">
               Nenhuma foto no grupo ainda
             </Text>
           </View>
@@ -101,8 +101,8 @@ export default function MemoriasScreen() {
             {sections.noites.map((section) => (
               <View key={section.key} className="mb-6">
                 <View className="flex-row items-baseline justify-between mb-3">
-                  <Text className="text-white font-bold text-base">{section.title}</Text>
-                  <Text className="text-white/40 text-xs">{section.date}</Text>
+                  <Text className="text-fg font-bold text-base">{section.title}</Text>
+                  <Text className="text-fg/40 text-xs">{section.date}</Text>
                 </View>
                 <PhotoGallery
                   photos={section.photos}
@@ -115,7 +115,7 @@ export default function MemoriasScreen() {
 
             {sections.semNoite.length > 0 && (
               <View className="mb-6">
-                <Text className="text-white font-bold text-base mb-3">Do grupo</Text>
+                <Text className="text-fg font-bold text-base mb-3">Do grupo</Text>
                 <PhotoGallery
                   photos={sections.semNoite}
                   urls={urls}

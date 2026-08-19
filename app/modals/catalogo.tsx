@@ -19,6 +19,8 @@ import {
   useUpdateProduct,
 } from '../../src/hooks/useCatalog';
 import type { ProductCategory } from '../../src/types';
+import { useTheme } from '../../src/theme/ThemeContext';
+import { withAlpha } from '../../src/theme/tokens';
 
 const CATEGORIES: { id: ProductCategory; label: string }[] = [
   { id: 'cerveja', label: 'Cerveja' },
@@ -35,6 +37,7 @@ function parsePrice(text: string): number {
 }
 
 export default function CatalogoModal() {
+  const { theme } = useTheme();
   const { isAdmin } = useSession();
 
   const { data: venues = [], isLoading: venuesLoading } = useVenues();
@@ -63,8 +66,8 @@ export default function CatalogoModal() {
 
   if (!isAdmin) {
     return (
-      <View className="flex-1 bg-ink justify-center items-center px-6">
-        <Text className="text-red-400 font-semibold text-center">
+      <View className="flex-1 bg-canvas justify-center items-center px-6">
+        <Text className="text-danger font-semibold text-center">
           Só um administrador do grupo pode gerir bares e produtos.
         </Text>
       </View>
@@ -150,20 +153,20 @@ export default function CatalogoModal() {
 
   return (
     <ScrollView
-      className="flex-1 bg-ink"
+      className="flex-1 bg-canvas"
       keyboardShouldPersistTaps="handled"
       contentContainerStyle={{ paddingBottom: 48 }}
     >
       <View className="px-4 py-6">
-        <Text className="text-white text-2xl font-black mb-6">Bares e produtos</Text>
+        <Text className="text-fg text-2xl font-black mb-6">Bares e produtos</Text>
 
-        <Text className="text-white/80 text-sm font-semibold mb-3">Bares</Text>
+        <Text className="text-fg/80 text-sm font-semibold mb-3">Bares</Text>
         {venuesLoading ? (
-          <ActivityIndicator color="#F27D26" />
+          <ActivityIndicator color={theme.colors.brand} />
         ) : (
           <View className="mb-3">
             {venues.length === 0 && (
-              <Text className="text-white/60 text-sm mb-2">
+              <Text className="text-fg/60 text-sm mb-2">
                 Ainda não há bares. Cria o primeiro para poder abrir noites.
               </Text>
             )}
@@ -174,12 +177,12 @@ export default function CatalogoModal() {
                 className={`rounded-2xl px-4 py-3 mb-2 border ${
                   selectedVenueId === venue.id
                     ? 'bg-brand/20 border-brand'
-                    : 'bg-white/10 border-white/20'
+                    : 'bg-fg/10 border-fg/20'
                 }`}
               >
                 <Text
                   className={`font-semibold ${
-                    selectedVenueId === venue.id ? 'text-brand' : 'text-white'
+                    selectedVenueId === venue.id ? 'text-brand' : 'text-fg'
                   }`}
                 >
                   {venue.name}
@@ -194,44 +197,44 @@ export default function CatalogoModal() {
             value={venueName}
             onChangeText={setVenueName}
             placeholder="Nome do bar"
-            placeholderTextColor="rgba(255, 255, 255, 0.4)"
-            className="flex-1 bg-white/10 border border-white/20 rounded-2xl px-4 py-3 text-white"
+            placeholderTextColor={withAlpha(theme.colors.fg, 0.4)}
+            className="flex-1 bg-fg/10 border border-fg/20 rounded-2xl px-4 py-3 text-fg"
           />
           <Pressable
             onPress={handleCreateVenue}
             disabled={!venueName.trim() || createVenue.isPending}
             className={`rounded-2xl px-4 py-3 items-center justify-center ${
-              venueName.trim() && !createVenue.isPending ? 'bg-brand' : 'bg-white/10'
+              venueName.trim() && !createVenue.isPending ? 'bg-brand' : 'bg-fg/10'
             }`}
           >
-            <Text className={venueName.trim() ? 'text-black font-black' : 'text-white/40 font-black'}>
+            <Text className={venueName.trim() ? 'text-on-brand font-black' : 'text-fg/40 font-black'}>
               Criar
             </Text>
           </Pressable>
         </View>
 
-        <Text className="text-white/80 text-sm font-semibold mb-3">
+        <Text className="text-fg/80 text-sm font-semibold mb-3">
           Produtos {selectedVenueId ? '' : '(escolhe um bar)'}
         </Text>
 
         {productsLoading ? (
-          <ActivityIndicator color="#F27D26" />
+          <ActivityIndicator color={theme.colors.brand} />
         ) : (
           <View className="mb-6">
             {products.length === 0 && (
-              <Text className="text-white/60 text-sm mb-2">
+              <Text className="text-fg/60 text-sm mb-2">
                 Este bar ainda não tem produtos. Sem produtos não há rodadas.
               </Text>
             )}
             {products.map((product) => (
               <View
                 key={product.id}
-                className="bg-white/5 border border-white/10 rounded-2xl p-4 mb-3"
+                className="bg-fg/5 border border-fg/10 rounded-2xl p-4 mb-3"
               >
                 <View className="flex-row justify-between items-start mb-3">
                   <View className="flex-1 pr-3">
-                    <Text className="text-white font-semibold">{product.name}</Text>
-                    <Text className="text-white/60 text-xs mt-1">{product.unit_size}</Text>
+                    <Text className="text-fg font-semibold">{product.name}</Text>
+                    <Text className="text-fg/60 text-xs mt-1">{product.unit_size}</Text>
                   </View>
                   <Text className="text-brand font-bold">
                     {product.current_price.toFixed(2)}€
@@ -245,20 +248,20 @@ export default function CatalogoModal() {
                       setPrices((current) => ({ ...current, [product.id]: text }))
                     }
                     placeholder="Novo preço"
-                    placeholderTextColor="rgba(255, 255, 255, 0.4)"
+                    placeholderTextColor={withAlpha(theme.colors.fg, 0.4)}
                     keyboardType="decimal-pad"
-                    className="flex-1 bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-white"
+                    className="flex-1 bg-fg/10 border border-fg/20 rounded-xl px-3 py-2 text-fg"
                   />
                   <Pressable
                     onPress={() => handleChangePrice(product.id)}
                     disabled={!prices[product.id] || changePrice.isPending}
                     className={`rounded-xl px-4 py-2 items-center justify-center ${
-                      prices[product.id] ? 'bg-brand' : 'bg-white/10'
+                      prices[product.id] ? 'bg-brand' : 'bg-fg/10'
                     }`}
                   >
                     <Text
                       className={
-                        prices[product.id] ? 'text-black font-black' : 'text-white/40 font-black'
+                        prices[product.id] ? 'text-on-brand font-black' : 'text-fg/40 font-black'
                       }
                     >
                       Guardar
@@ -266,15 +269,15 @@ export default function CatalogoModal() {
                   </Pressable>
                   <Pressable
                     onPress={() => handleStartEditing(product.id)}
-                    className="rounded-xl px-3 py-2 bg-white/10 border border-white/20 items-center justify-center"
+                    className="rounded-xl px-3 py-2 bg-fg/10 border border-fg/20 items-center justify-center"
                   >
-                    <Text className="text-white text-xs font-semibold">Editar</Text>
+                    <Text className="text-fg text-xs font-semibold">Editar</Text>
                   </Pressable>
                   <Pressable
                     onPress={() => handleDeactivate(product.id, product.name)}
-                    className="rounded-xl px-3 py-2 bg-red-500/20 items-center justify-center"
+                    className="rounded-xl px-3 py-2 bg-danger/20 items-center justify-center"
                   >
-                    <Text className="text-red-300 text-xs font-semibold">Desativar</Text>
+                    <Text className="text-danger text-xs font-semibold">Desativar</Text>
                   </Pressable>
                 </View>
               </View>
@@ -282,22 +285,22 @@ export default function CatalogoModal() {
           </View>
         )}
 
-        <Text className="text-white/80 text-sm font-semibold mb-3">
+        <Text className="text-fg/80 text-sm font-semibold mb-3">
           {editingId ? 'Editar produto' : 'Novo produto'}
         </Text>
         <TextInput
           value={productName}
           onChangeText={setProductName}
           placeholder="Nome (ex: Imperial)"
-          placeholderTextColor="rgba(255, 255, 255, 0.4)"
-          className="bg-white/10 border border-white/20 rounded-2xl px-4 py-3 text-white mb-2"
+          placeholderTextColor={withAlpha(theme.colors.fg, 0.4)}
+          className="bg-fg/10 border border-fg/20 rounded-2xl px-4 py-3 text-fg mb-2"
         />
         <TextInput
           value={unitSize}
           onChangeText={setUnitSize}
           placeholder="Tamanho (ex: Caneca 0.5L)"
-          placeholderTextColor="rgba(255, 255, 255, 0.4)"
-          className="bg-white/10 border border-white/20 rounded-2xl px-4 py-3 text-white mb-2"
+          placeholderTextColor={withAlpha(theme.colors.fg, 0.4)}
+          className="bg-fg/10 border border-fg/20 rounded-2xl px-4 py-3 text-fg mb-2"
         />
         {/* Em edição o preço não entra aqui: tem o seu próprio fluxo no cartão
             do produto, porque mexe no histórico imutável. */}
@@ -306,9 +309,9 @@ export default function CatalogoModal() {
             value={price}
             onChangeText={setPrice}
             placeholder="Preço (ex: 1,50)"
-            placeholderTextColor="rgba(255, 255, 255, 0.4)"
+            placeholderTextColor={withAlpha(theme.colors.fg, 0.4)}
             keyboardType="decimal-pad"
-            className="bg-white/10 border border-white/20 rounded-2xl px-4 py-3 text-white mb-3"
+            className="bg-fg/10 border border-fg/20 rounded-2xl px-4 py-3 text-fg mb-3"
           />
         )}
 
@@ -320,12 +323,12 @@ export default function CatalogoModal() {
               className={`rounded-full px-4 py-2 border ${
                 category === option.id
                   ? 'bg-brand/20 border-brand'
-                  : 'bg-white/10 border-white/20'
+                  : 'bg-fg/10 border-fg/20'
               }`}
             >
               <Text
                 className={`font-semibold text-xs ${
-                  category === option.id ? 'text-brand' : 'text-white'
+                  category === option.id ? 'text-brand' : 'text-fg'
                 }`}
               >
                 {option.label}
@@ -348,13 +351,13 @@ export default function CatalogoModal() {
             unitSize.trim() &&
             (editingId || (selectedVenueId && parsePrice(price) > 0))
               ? 'bg-brand'
-              : 'bg-white/10'
+              : 'bg-fg/10'
           }`}
         >
           {createProduct.isPending || updateProduct.isPending ? (
             <ActivityIndicator color="rgba(0, 0, 0, 0.6)" />
           ) : (
-            <Text className="text-black font-black text-center">
+            <Text className="text-on-brand font-black text-center">
               {editingId ? 'Guardar alterações' : 'Criar produto'}
             </Text>
           )}
@@ -363,15 +366,15 @@ export default function CatalogoModal() {
         {editingId && (
           <Pressable
             onPress={resetProductForm}
-            className="rounded-2xl px-6 py-3 items-center mt-2 bg-white/10 border border-white/20"
+            className="rounded-2xl px-6 py-3 items-center mt-2 bg-fg/10 border border-fg/20"
           >
-            <Text className="text-white font-semibold text-center">Cancelar edição</Text>
+            <Text className="text-fg font-semibold text-center">Cancelar edição</Text>
           </Pressable>
         )}
 
         {error && (
-          <View className="bg-red-500/20 border border-red-500/40 rounded-2xl px-4 py-3 mt-4">
-            <Text className="text-red-300 text-sm">{error}</Text>
+          <View className="bg-danger/20 border border-danger/40 rounded-2xl px-4 py-3 mt-4">
+            <Text className="text-danger text-sm">{error}</Text>
           </View>
         )}
       </View>

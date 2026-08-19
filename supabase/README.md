@@ -175,6 +175,13 @@ Na mesma mudança de conceito, a tabela `consumption` deixou de ser escrita pela
 app: cada membro paga as rodadas que pediu — não há divisão da conta. As linhas
 antigas ficam como histórico.
 
+## 0009 — Tema do grupo
+
+`groups.theme`, com `CHECK` sobre os nomes conhecidos. O tema é uma preferência
+do dispositivo (AsyncStorage, `bras.theme`); esta coluna é o tema de entrada do
+grupo — o que aparece a quem ainda não escolheu. Só administrador escreve, pela
+`groups_update_admin` já existente. `NULL` significa "o grupo não decidiu".
+
 ## Estado do lado do cliente
 
 O upload de fotos existe desde `5acd7d9`: `src/api/media.ts` carrega para
@@ -187,6 +194,6 @@ Offline: as escritas passam pela fila `@bras_mutation_queue` e o cache de leitur
 é guardado em `@bras_query_cache`. O cache tem dados do grupo em claro no
 dispositivo — sair do grupo apaga os dois, além do código no SecureStore.
 
-Aplicadas no projeto real (2026-08-18): `0001`–`0007`. Em aberto: a migração
-`0008` (snapshot da rodada) tem de ser aplicada antes de instalar o APK com o
-conceito de Rodada — sem ela, o insert de `member_count`/`member_ids` falha.
+Aplicadas no projeto real: `0001`–`0008` (a `0008` em 2026-08-19). Em aberto: a
+`0009` (tema do grupo). Sem ela a app funciona — cada dispositivo guarda o seu
+tema —, mas um administrador não consegue fixar o tema de entrada do grupo.

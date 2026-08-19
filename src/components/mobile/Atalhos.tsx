@@ -3,6 +3,8 @@ import { usePathname, useRouter } from 'expo-router';
 import { Home, Beer, Users, Calendar, Camera, Trophy } from 'lucide-react-native';
 import { useSession } from '../../state/SessionContext';
 import { useSession as useActiveSessions } from '../../hooks/useSession';
+import { useTheme } from '../../theme/ThemeContext';
+import { withAlpha } from '../../theme/tokens';
 
 /**
  * Barra de atalhos no topo, presente em todos os ecrãs do grupo (mobile).
@@ -15,6 +17,7 @@ export function Atalhos() {
   const router = useRouter();
   const pathname = usePathname();
   const { grant } = useSession();
+  const { theme } = useTheme();
   const { data: activeSessions = [] } = useActiveSessions(grant?.groupId ?? '');
 
   const items = [
@@ -55,7 +58,7 @@ export function Atalhos() {
   ];
 
   return (
-    <View className="flex-row gap-1.5 px-3 pt-2 pb-1 bg-ink">
+    <View className="flex-row gap-1.5 px-3 pt-2 pb-1 bg-canvas">
       {items.map(({ label, href, Icon, go }) => {
         const active = href === '/' ? pathname === '/' : pathname.startsWith(href);
         return (
@@ -63,13 +66,16 @@ export function Atalhos() {
             key={label}
             onPress={go}
             className={`flex-1 items-center justify-center rounded-xl py-2 border ${
-              active ? 'bg-brand/20 border-brand' : 'bg-white/10 border-white/20'
+              active ? 'bg-brand/20 border-brand' : 'bg-fg/10 border-fg/20'
             }`}
           >
-            <Icon size={20} color={active ? '#F27D26' : 'rgba(255,255,255,0.7)'} />
+            <Icon
+              size={20}
+              color={active ? theme.colors.brand : withAlpha(theme.colors.fg, 0.7)}
+            />
             <Text
               className={`text-[9px] font-semibold mt-1 ${
-                active ? 'text-brand' : 'text-white/70'
+                active ? 'text-brand' : 'text-fg/70'
               }`}
             >
               {label}

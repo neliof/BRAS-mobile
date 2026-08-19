@@ -2,6 +2,7 @@ import { ScrollView, View, Text, Pressable, ActivityIndicator } from 'react-nati
 import { useLocalSearchParams } from 'expo-router';
 import { useSessionDetails, useSessionMembers } from '../../src/hooks/useSession';
 import { useGroupProfiles } from '../../src/hooks/useProfiles';
+import { useTheme } from '../../src/theme/ThemeContext';
 
 /**
  * Entradas e saídas de membros durante a noite.
@@ -14,6 +15,7 @@ import { useGroupProfiles } from '../../src/hooks/useProfiles';
  * operação de administração.
  */
 export default function MembrosNoiteModal() {
+  const { theme } = useTheme();
   const params = useLocalSearchParams<{ sessionId?: string }>();
   const sessionId = params?.sessionId ?? '';
   const { data: session } = useSessionDetails(sessionId);
@@ -22,8 +24,8 @@ export default function MembrosNoiteModal() {
 
   if (!sessionId) {
     return (
-      <View className="flex-1 bg-ink justify-center items-center">
-        <Text className="text-red-400 font-semibold">Erro: Sessão inválida</Text>
+      <View className="flex-1 bg-canvas justify-center items-center">
+        <Text className="text-danger font-semibold">Erro: Sessão inválida</Text>
       </View>
     );
   }
@@ -41,16 +43,16 @@ export default function MembrosNoiteModal() {
   };
 
   return (
-    <ScrollView className="flex-1 bg-ink" contentContainerStyle={{ paddingBottom: 48 }}>
+    <ScrollView className="flex-1 bg-canvas" contentContainerStyle={{ paddingBottom: 48 }}>
       <View className="px-4 py-6">
-        <Text className="text-white text-2xl font-black mb-1">Membros na noite</Text>
-        <Text className="text-white/60 text-sm mb-6">
+        <Text className="text-fg text-2xl font-black mb-1">Membros na noite</Text>
+        <Text className="text-fg/60 text-sm mb-6">
           {activeIds.size} {activeIds.size === 1 ? 'membro' : 'membros'} agora. Toca para
           marcar entradas e saídas — as rodadas anteriores não mudam.
         </Text>
 
         {isLoading ? (
-          <ActivityIndicator color="#F27D26" />
+          <ActivityIndicator color={theme.colors.brand} />
         ) : (
           profiles.map((profile) => {
             const isIn = activeIds.has(profile.id);
@@ -59,23 +61,23 @@ export default function MembrosNoiteModal() {
                 key={profile.id}
                 onPress={() => toggle(profile.id)}
                 className={`flex-row items-center rounded-2xl px-4 py-3 mb-2 border ${
-                  isIn ? 'bg-brand/20 border-brand' : 'bg-white/10 border-white/20'
+                  isIn ? 'bg-brand/20 border-brand' : 'bg-fg/10 border-fg/20'
                 }`}
               >
                 <View
                   className={`w-5 h-5 rounded-full border-2 mr-3 ${
-                    isIn ? 'bg-brand border-brand' : 'border-white/40'
+                    isIn ? 'bg-brand border-brand' : 'border-fg/40'
                   }`}
                 />
                 <View className="flex-1">
-                  <Text className={`font-semibold ${isIn ? 'text-brand' : 'text-white'}`}>
+                  <Text className={`font-semibold ${isIn ? 'text-brand' : 'text-fg'}`}>
                     {profile.name}
                   </Text>
-                  <Text className="text-white/50 text-xs mt-0.5">
+                  <Text className="text-fg/50 text-xs mt-0.5">
                     {isIn ? 'Na noite' : 'Fora da noite'}
                   </Text>
                 </View>
-                <Text className={`text-xs font-semibold ${isIn ? 'text-white/60' : 'text-brand'}`}>
+                <Text className={`text-xs font-semibold ${isIn ? 'text-fg/60' : 'text-brand'}`}>
                   {isIn ? 'Sair' : 'Entrar'}
                 </Text>
               </Pressable>
@@ -84,8 +86,8 @@ export default function MembrosNoiteModal() {
         )}
 
         {(add.isError || remove.isError) && (
-          <View className="bg-red-500/20 border border-red-500/40 rounded-2xl px-4 py-3 mt-4">
-            <Text className="text-red-300 text-sm">
+          <View className="bg-danger/20 border border-danger/40 rounded-2xl px-4 py-3 mt-4">
+            <Text className="text-danger text-sm">
               Não foi possível atualizar os membros. Tenta outra vez.
             </Text>
           </View>

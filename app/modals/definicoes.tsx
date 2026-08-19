@@ -7,8 +7,11 @@ import { useSession } from '../../src/state/SessionContext';
 import { useSyncStatus } from '../../src/hooks/useSyncStatus';
 import { clearQueue, readQueue } from '../../src/state/mutationQueue';
 import { clearPersistedCache } from '../../src/state/queryPersist';
+import { useTheme } from '../../src/theme/ThemeContext';
+import { THEMES, THEME_NAMES, withAlpha } from '../../src/theme/tokens';
 
 export default function DefinicoesModal() {
+  const { theme, setTheme } = useTheme();
   const router = useRouter();
   const { profile, isAdmin, signOut } = useSession();
   const queryClient = useQueryClient();
@@ -87,14 +90,14 @@ export default function DefinicoesModal() {
   };
 
   return (
-    <ScrollView className="flex-1 bg-ink">
+    <ScrollView className="flex-1 bg-canvas">
       <View className="px-4 py-6">
-        <Text className="text-white text-2xl font-black mb-6">Definições</Text>
+        <Text className="text-fg text-2xl font-black mb-6">Definições</Text>
 
-        <View className="bg-white/10 rounded-2xl p-4 border border-white/20 mb-6">
-          <Text className="text-white/60 text-xs mb-1">Perfil atual</Text>
-          <Text className="text-white font-bold text-lg">{profile?.name ?? 'Sem perfil'}</Text>
-          <Text className="text-white/60 text-xs mt-2">
+        <View className="bg-fg/10 rounded-2xl p-4 border border-fg/20 mb-6">
+          <Text className="text-fg/60 text-xs mb-1">Perfil atual</Text>
+          <Text className="text-fg font-bold text-lg">{profile?.name ?? 'Sem perfil'}</Text>
+          <Text className="text-fg/60 text-xs mt-2">
             {isAdmin ? 'Administrador do grupo' : 'Membro do grupo'}
           </Text>
           {pending > 0 && (
@@ -104,14 +107,14 @@ export default function DefinicoesModal() {
           )}
         </View>
 
-        <View className="bg-white/10 rounded-2xl p-4 border border-white/20 mb-6">
-          <Text className="text-white/60 text-xs mb-1">Última sincronização</Text>
-          <Text className="text-white font-semibold">
+        <View className="bg-fg/10 rounded-2xl p-4 border border-fg/20 mb-6">
+          <Text className="text-fg/60 text-xs mb-1">Última sincronização</Text>
+          <Text className="text-fg font-semibold">
             {lastSyncedAt
               ? new Date(lastSyncedAt).toLocaleString('pt-PT')
               : 'Ainda não sincronizado neste telemóvel'}
           </Text>
-          <Text className="text-white/40 text-xs mt-2">
+          <Text className="text-fg/40 text-xs mt-2">
             Os dados ficam guardados no telemóvel e continuam visíveis sem rede.
           </Text>
 
@@ -119,37 +122,37 @@ export default function DefinicoesModal() {
             onPress={handleSyncNow}
             disabled={syncing}
             className={`rounded-2xl px-6 py-3 items-center mt-4 ${
-              syncing ? 'bg-white/10' : 'bg-brand'
+              syncing ? 'bg-fg/10' : 'bg-brand'
             }`}
           >
             {syncing ? (
-              <ActivityIndicator color="rgba(255, 255, 255, 0.6)" />
+              <ActivityIndicator color={withAlpha(theme.colors.onBrand, 0.6)} />
             ) : (
-              <Text className="text-black font-black">Sincronizar agora</Text>
+              <Text className="text-on-brand font-black">Sincronizar agora</Text>
             )}
           </Pressable>
         </View>
 
         <Pressable
           onPress={() => router.push('/(gate)/perfil')}
-          className="bg-white/10 rounded-2xl px-6 py-4 items-center border border-white/20 mb-2"
+          className="bg-fg/10 rounded-2xl px-6 py-4 items-center border border-fg/20 mb-2"
         >
-          <Text className="text-white font-black text-center">Trocar perfil</Text>
+          <Text className="text-fg font-black text-center">Trocar perfil</Text>
         </Pressable>
 
         {isAdmin && (
           <>
             <Pressable
               onPress={() => router.push('/modals/novo-membro')}
-              className="bg-white/10 rounded-2xl px-6 py-4 items-center border border-white/20 mb-2"
+              className="bg-fg/10 rounded-2xl px-6 py-4 items-center border border-fg/20 mb-2"
             >
-              <Text className="text-white font-black text-center">Adicionar membro</Text>
+              <Text className="text-fg font-black text-center">Adicionar membro</Text>
             </Pressable>
             <Pressable
               onPress={() => router.push('/modals/catalogo')}
-              className="bg-white/10 rounded-2xl px-6 py-4 items-center border border-white/20 mb-2"
+              className="bg-fg/10 rounded-2xl px-6 py-4 items-center border border-fg/20 mb-2"
             >
-              <Text className="text-white font-black text-center">Bares e produtos</Text>
+              <Text className="text-fg font-black text-center">Bares e produtos</Text>
             </Pressable>
           </>
         )}
@@ -157,29 +160,74 @@ export default function DefinicoesModal() {
         <Pressable
           onPress={handleSignOut}
           disabled={busy}
-          className="rounded-2xl px-6 py-4 items-center border border-red-500/40 bg-red-500/10 mt-4"
+          className="rounded-2xl px-6 py-4 items-center border border-danger/40 bg-danger/10 mt-4"
         >
           {busy ? (
-            <ActivityIndicator color="#FCA5A5" />
+            <ActivityIndicator color={theme.colors.danger} />
           ) : (
-            <Text className="text-red-300 font-black">Sair do grupo</Text>
+            <Text className="text-danger font-black">Sair do grupo</Text>
           )}
         </Pressable>
 
         {error && (
-          <View className="bg-red-500/20 border border-red-500/40 rounded-2xl px-4 py-3 mt-4">
-            <Text className="text-red-300 text-sm">{error}</Text>
+          <View className="bg-danger/20 border border-danger/40 rounded-2xl px-4 py-3 mt-4">
+            <Text className="text-danger text-sm">{error}</Text>
           </View>
         )}
 
-        <View className="bg-white/5 border border-white/10 rounded-2xl p-4 mt-6">
-          <Text className="text-white/60 text-xs font-semibold mb-2">Acerca da app</Text>
-          <Text className="text-white font-bold">Brás Aquele Bar</Text>
-          <Text className="text-white/60 text-xs mt-1">
+        {/* Cada opção pinta-se com as suas próprias cores: escolhe-se pelo
+            aspeto, não pelo nome. */}
+        <View className="mt-6">
+          <Text className="text-fg/60 text-xs font-semibold mb-3">Tema</Text>
+          {THEME_NAMES.map((name) => {
+            const option = THEMES[name];
+            const selected = theme.name === name;
+            return (
+              <Pressable
+                key={name}
+                onPress={() => setTheme(name)}
+                className={`flex-row items-center rounded-2xl px-4 py-3 mb-2 border ${
+                  selected ? 'border-brand' : 'border-fg/20'
+                }`}
+                style={{ backgroundColor: option.colors.canvas }}
+              >
+                <View
+                  className="w-8 h-8 rounded-full mr-3 items-center justify-center"
+                  style={{ backgroundColor: option.colors.brand }}
+                >
+                  {selected && (
+                    <Text style={{ color: option.colors.onBrand }} className="font-black text-xs">
+                      ✓
+                    </Text>
+                  )}
+                </View>
+                <View className="flex-1">
+                  <Text style={{ color: option.colors.fg }} className="font-semibold">
+                    {option.label}
+                  </Text>
+                  <Text style={{ color: withAlpha(option.colors.fg, 0.6) }} className="text-xs mt-0.5">
+                    {option.description}
+                  </Text>
+                </View>
+              </Pressable>
+            );
+          })}
+          {isAdmin && (
+            <Text className="text-fg/40 text-xs mt-1">
+              Como administrador, o tema que escolheres fica também como o tema de
+              entrada do grupo.
+            </Text>
+          )}
+        </View>
+
+        <View className="bg-fg/5 border border-fg/10 rounded-2xl p-4 mt-6">
+          <Text className="text-fg/60 text-xs font-semibold mb-2">Acerca da app</Text>
+          <Text className="text-fg font-bold">Brás Aquele Bar</Text>
+          <Text className="text-fg/60 text-xs mt-1">
             Versão {Constants.expoConfig?.version ?? '1.0.0'}
             {buildDate ? ` • compilada a ${buildDate}` : ''}
           </Text>
-          <Text className="text-white/60 text-xs mt-2">
+          <Text className="text-fg/60 text-xs mt-2">
             Desenvolvido e mantido por: Nélio Freitas
           </Text>
         </View>

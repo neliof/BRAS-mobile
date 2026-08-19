@@ -158,28 +158,28 @@ export default function ConquistasScreen() {
   const totalCount = achievements.length;
 
   return (
-    <ScrollView className="flex-1 bg-ink">
+    <ScrollView className="flex-1 bg-canvas">
       <View className="px-4 pt-6 pb-4">
-        <Text className="text-white text-3xl font-black mb-1">Troféus</Text>
-        <Text className="text-white/60 text-sm">
+        <Text className="text-fg text-3xl font-black mb-1">Troféus</Text>
+        <Text className="text-fg/60 text-sm">
           {earnedCount} de {totalCount} conquistados
         </Text>
       </View>
 
       <View className="px-4 mb-6">
-        <View className="bg-white/10 rounded-2xl p-4 border border-white/20">
+        <View className="bg-fg/10 rounded-2xl p-4 border border-fg/20">
           <View className="flex-row justify-between">
             <View>
-              <Text className="text-white/60 text-xs mb-1">Conquistados</Text>
+              <Text className="text-fg/60 text-xs mb-1">Conquistados</Text>
               <Text className="text-brand text-2xl font-black">{earnedCount}</Text>
             </View>
             <View className="items-end">
-              <Text className="text-white/60 text-xs mb-1">Por conquistar</Text>
+              <Text className="text-fg/60 text-xs mb-1">Por conquistar</Text>
               <Text className="text-brand text-2xl font-black">{totalCount - earnedCount}</Text>
             </View>
           </View>
 
-          <View className="mt-4 bg-white/10 rounded-full h-2 overflow-hidden">
+          <View className="mt-4 bg-fg/10 rounded-full h-2 overflow-hidden">
             <View
               className="bg-brand h-full"
               style={{ width: `${(earnedCount / totalCount) * 100}%` }}
