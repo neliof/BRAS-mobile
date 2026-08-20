@@ -6,6 +6,8 @@ import {
   fetchActiveRounds,
   createRound,
   cancelRound,
+  deleteRound,
+  updateRound,
   type CreateRoundItem,
 } from '../api/rounds';
 import { supabase } from '../api/supabase';
@@ -93,6 +95,44 @@ export function useCreateRound() {
       queryClient.invalidateQueries({ queryKey: ['sessions'] });
     },
   });
+}
+
+/**
+ * Corrigir e apagar rodadas.
+ *
+ * Ambas invalidam `['rounds']` e `['sessions']`: a última rodada, a sugestão
+ * do próximo e as contas leem-se todas da sessão, não só da lista de rodadas.
+ */
+function useRoundWrite<TVariables>(
+  mutationFn: (variables: TVariables) => Promise<unknown>,
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['rounds'] });
+      queryClient.invalidateQueries({ queryKey: ['sessions'] });
+    },
+  });
+}
+
+export function useUpdateRound() {
+  return useRoundWrite(
+    (variables: {
+      roundId: string;
+      roundData: {
+        requestedBy: string;
+        notes?: string;
+        memberIds: string[];
+        items: CreateRoundItem[];
+      };
+    }) => updateRound(variables.roundId, variables.roundData),
+  );
+}
+
+export function useDeleteRound() {
+  return useRoundWrite((roundId: string) => deleteRound(roundId));
 }
 
 /**

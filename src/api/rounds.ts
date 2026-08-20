@@ -164,6 +164,99 @@ export async function createRound(
   } as unknown as Round;
 }
 
+/**
+ * Corrige uma rodada já registada: responsável, bebidas, snapshot de membros,
+ * observações. Alguém pede pelo amigo, engana-se na quantidade, ou o snapshot
+ * apanhou quem já tinha saído — a mesa corrige-se em vez de acumular erros.
+ *
+ * `round_number` e `created_at` não se tocam: a posição no histórico e a hora
+ * a que a rodada aconteceu são o que aconteceu.
+ *
+ * Os artigos novos entram ANTES de os velhos saírem, de propósito. Sem
+ * transação do lado do cliente, uma falha a meio tem de deixar a rodada com
+ * bebidas a mais — visível e corrigível — e nunca com nenhuma.
+ */
+export async function updateRound(
+  roundId: string,
+  data: {
+    requestedBy: string;
+    notes?: string;
+    memberIds: string[];
+    items: CreateRoundItem[];
+  },
+): Promise<void> {
+  if (data.items.length === 0) {
+    throw new Error('A rodada tem de ter pelo menos uma bebida.');
+  }
+
+  const { data: oldItems, error: readError } = await supabase
+    .from('round_items')
+    .select('id')
+    .eq('round_id', roundId);
+
+  if (readError) throw new Error(readError.message);
+
+  const { error: insertError } = await supabase.from('round_items').insert(
+    data.items.map((item) => ({
+      round_id: roundId,
+      product_id: item.productId,
+      product_name: item.productName,
+      product_image: item.productImage,
+      quantity: item.quantity,
+      unit_price: item.unitPrice,
+      total_price: item.totalPrice,
+    })),
+  );
+
+  if (insertError) throw new Error(insertError.message);
+
+  const oldIds = (oldItems ?? []).map((item) => item.id);
+  if (oldIds.length > 0) {
+    const { error: deleteError } = await supabase
+      .from('round_items')
+      .delete()
+      .in('id', oldIds);
+
+    if (deleteError) {
+      throw new Error(
+        `As bebidas novas foram gravadas mas as antigas não saíram (${deleteError.message}). Edita a rodada outra vez.`,
+      );
+    }
+  }
+
+  const { error } = await supabase
+    .from('rounds')
+    .update({
+      requested_by: data.requestedBy,
+      notes: data.notes,
+      member_count: data.memberIds.length,
+      member_ids: data.memberIds,
+      total_amount: data.items.reduce((sum, item) => sum + item.totalPrice, 0),
+    })
+    .eq('id', roundId);
+
+  if (error) throw new Error(error.message);
+}
+
+/**
+ * Apaga uma rodada. O `ON DELETE CASCADE` leva os artigos atrás.
+ *
+ * Os números das rodadas seguintes não recuam: a rodada 3 continua a ser a 3
+ * depois de a 2 desaparecer. Renumerar reescrevia o histórico de toda a gente
+ * para arrumar um buraco que ninguém repara.
+ */
+export async function deleteRound(roundId: string): Promise<void> {
+  const { error, count } = await supabase
+    .from('rounds')
+    .delete({ count: 'exact' })
+    .eq('id', roundId);
+
+  if (error) throw new Error(error.message);
+  if ((count ?? 0) === 0) {
+    throw new Error('Essa rodada já não existe.');
+  }
+}
+
 export async function cancelRound(
   roundId: string,
   reason?: string

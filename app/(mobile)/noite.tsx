@@ -103,6 +103,15 @@ export default function NiteScreen() {
     ]);
   };
 
+  const isActive = session.status === 'active';
+
+  const handleEditRound = (roundId: string) => {
+    router.push({
+      pathname: '/modals/nova-rodada',
+      params: { sessionId: safeSessionId, roundId },
+    });
+  };
+
   const handleAddRound = () => {
     router.push({
       pathname: '/modals/nova-rodada',
@@ -232,7 +241,12 @@ export default function NiteScreen() {
             data={rounds}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
-              <RoundItem round={item} responsibleName={nameOf(item.requested_by)} />
+              <RoundItem
+                round={item}
+                responsibleName={nameOf(item.requested_by)}
+                // Noite fechada é histórico: lê-se, não se corrige.
+                onPress={isActive ? () => handleEditRound(item.id) : undefined}
+              />
             )}
             scrollEnabled={false}
           />

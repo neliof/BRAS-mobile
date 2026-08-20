@@ -1,4 +1,4 @@
-import { View, Text, FlatList } from 'react-native';
+import { View, Text, FlatList, Pressable } from 'react-native';
 import type { Round, RoundItem as RoundItemType } from '../../types';
 import { totalDrinks } from '../../domain/rounds';
 
@@ -6,6 +6,8 @@ interface RoundItemProps {
   round: Round;
   /** Nome do responsável — o cartão nunca mostra UUIDs. */
   responsibleName?: string;
+  /** Sem isto o cartão é só leitura: o histórico de uma noite fechada. */
+  onPress?: () => void;
 }
 
 function RoundItemProduct({ item }: { item: RoundItemType }): React.ReactElement {
@@ -24,7 +26,11 @@ function RoundItemProduct({ item }: { item: RoundItemType }): React.ReactElement
   );
 }
 
-export function RoundItem({ round, responsibleName }: RoundItemProps): React.ReactElement {
+export function RoundItem({
+  round,
+  responsibleName,
+  onPress,
+}: RoundItemProps): React.ReactElement {
   const drinks = totalDrinks(round);
   const hora = round.created_at
     ? new Date(round.created_at).toLocaleTimeString('pt-PT', {
@@ -33,11 +39,16 @@ export function RoundItem({ round, responsibleName }: RoundItemProps): React.Rea
       })
     : '';
 
+  const Container = onPress ? Pressable : View;
+
   return (
-    <View className="bg-fg/10 rounded-2xl p-4 mb-3 border border-fg/20">
+    <Container onPress={onPress} className="bg-fg/10 rounded-2xl p-4 mb-3 border border-fg/20">
       <View className="flex-row items-center justify-between mb-1">
         <Text className="text-fg font-bold">Rodada {round.round_number}</Text>
-        <Text className="text-brand font-bold text-sm">{round.total_amount.toFixed(2)}€</Text>
+        <View className="flex-row items-center gap-2">
+          {onPress && <Text className="text-fg/40 text-xs">Editar</Text>}
+          <Text className="text-brand font-bold text-sm">{round.total_amount.toFixed(2)}€</Text>
+        </View>
       </View>
 
       <Text className="text-fg/60 text-xs mb-3">
@@ -53,6 +64,6 @@ export function RoundItem({ round, responsibleName }: RoundItemProps): React.Rea
         renderItem={({ item }) => <RoundItemProduct item={item} />}
         scrollEnabled={false}
       />
-    </View>
+    </Container>
   );
 }
